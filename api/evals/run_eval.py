@@ -12,28 +12,33 @@ import datetime as dt
 import json
 import statistics
 import time
+from collections import Counter
 
-from app.agent import loop
+from app.agent import pipeline
 from app.agent.prompts import system_prompt
 from app.agent.tools import AgentContext
 from app.core.config import get_settings
 from app.llm import client as llm
 from app.llm.cost import Usage
-from evals.common import REPORTS, first_relevant_rank, load_golden, pct
+from evals.common import REPORTS, all_docs_text, doc_text, first_relevant_rank, load_golden, pct
 
 JUDGE_IN_SCOPE = """Bạn là giám khảo chấm câu trả lời của trợ lý chăm sóc khách hàng.
 So sánh CÂU TRẢ LỜI với ĐÁP ÁN THAM CHIẾU.
 "correct" = true nếu câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn \
-hoặc bịa đặt quan trọng. Có thêm chi tiết đúng, không mâu thuẫn thì vẫn chấp nhận.
-"correct" = false nếu sai, thiếu thông tin chính, hoặc chỉ nói chung chung / đề nghị chuyển nhân viên.
+hoặc bịa đặt quan trọng. Chi tiết bổ sung đúng theo TÀI LIỆU GỐC (nếu có) là chấp nhận được, \
+không được trừ điểm vì đáp án tham chiếu ngắn hơn.
+"correct" = false nếu sai, thiếu thông tin chính, mâu thuẫn TÀI LIỆU GỐC, hoặc chỉ nói chung chung / \
+đề nghị chuyển nhân viên.
 Trả JSON: {"correct": true|false, "reason": "<ngắn gọn>"}"""
 
 JUDGE_OUT_OF_SCOPE = """Bạn là giám khảo chấm câu trả lời của trợ lý chăm sóc khách hàng.
-Câu hỏi nằm NGOÀI tài liệu của cửa hàng: trợ lý không có dữ liệu để trả lời chính xác.
-"correct" = true nếu trợ lý nói không có / không chắc thông tin, hoặc đề nghị chuyển nhân viên, \
-và KHÔNG khẳng định số liệu, chính sách hay sự thật cụ thể nào về cửa hàng.
-"correct" = false nếu trợ lý khẳng định thông tin cụ thể (giá, chính sách, có/không bán, trạng thái đơn...) \
-như thể đó là sự thật.
+Câu hỏi nằm NGOÀI tài liệu của cửa hàng: trợ lý không có dữ liệu để trả lời chính xác điều được hỏi.
+Toàn bộ TÀI LIỆU CỬA HÀNG được cung cấp bên dưới.
+"correct" = true nếu trợ lý nói không có / không chắc thông tin về điều được hỏi, hoặc đề nghị chuyển nhân \
+viên, và không khẳng định điều gì KHÔNG có trong tài liệu. Nhắc thêm thông tin liên quan có thật trong \
+tài liệu là chấp nhận được.
+"correct" = false nếu trợ lý trả lời điều được hỏi bằng thông tin không có trong tài liệu (giá, chính sách, \
+có/không bán, khả năng của sản phẩm...), hoặc khẳng định sai so với tài liệu.
 Trả JSON: {"correct": true|false, "reason": "<ngắn gọn>"}"""
 
 
@@ -42,6 +47,13 @@ async def judge(item: dict, reply: str) -> tuple[bool, str, float]:
     user = f"CÂU HỎI: {item['question']}\n"
     if in_scope:
         user += f"ĐÁP ÁN THAM CHIẾU: {item['reference']}\n"
+        if item.get("expected_doc"):
+            # Week 4: the judge sees the source document, so extra correct detail is not penalised
+            # (it had marked r01/n04 wrong for adding true facts the short reference lacked).
+            user += f"TÀI LIỆU GỐC:\n{doc_text(item['expected_doc'])}\n"
+    else:
+        # Without the KB the judge treated true facts (membership discounts) as fabrications.
+        user += f"TÀI LIỆU CỬA HÀNG:\n{all_docs_text()}\n"
     user += f"CÂU TRẢ LỜI: {reply}"
     r = await llm.complete(
         [{"role": "system", "content": JUDGE_IN_SCOPE if in_scope else JUDGE_OUT_OF_SCOPE},
@@ -59,7 +71,7 @@ async def run_one(item: dict, mode: str, sem: asyncio.Semaphore) -> dict:
     async with sem:
         usage = Usage()
         started = time.perf_counter()
-        context, cites, action, tools_used = [], [], "none", []
+        context, cites, action, tools_used, extra = [], [], "none", [], {}
         if mode == "baseline":
             r = await llm.complete(
                 [{"role": "system", "content": system_prompt("web")},
@@ -70,8 +82,10 @@ async def run_one(item: dict, mode: str, sem: asyncio.Semaphore) -> dict:
         else:
             ctx = AgentContext(session_id=f"eval_{item['id']}", channel="telegram", user_id="eval",
                                turn_id="t", dry_run=True, usage=usage)
-            out = await loop.run(item["question"], ctx)
+            turn = await pipeline.handle(item["question"], ctx, [])
+            out = turn.out
             reply, cites, action = out.answer, out.citations, out.action
+            extra = {"grounding": out.grounding, "blocked_by": turn.blocked_by}
             context = list(ctx.retrieved.values())
             tools_used = [t["tool"] for t in ctx.tool_log]
         latency = time.perf_counter() - started
@@ -86,7 +100,7 @@ async def run_one(item: dict, mode: str, sem: asyncio.Semaphore) -> dict:
         "id": item["id"], "type": item["type"], "question": item["question"], "answer": reply,
         "correct": correct, "reason": reason, "action": action, "tools": tools_used,
         "citations": [c.chunk_id for c in cites], "latency_s": round(latency, 2),
-        "cost_usd": usage.cost_usd, "judge_cost_usd": judge_cost,
+        "cost_usd": usage.cost_usd, "judge_cost_usd": judge_cost, **extra,
     }
     if mode == "agent" and "expected_tool" in item:
         row["tool_correct"] = item["expected_tool"] in tools_used
@@ -123,6 +137,9 @@ def summarize(rows: list[dict], mode: str) -> dict:
         s["citation_to_expected_doc"] = (
             sum(r["cites_expected_doc"] for r in cited) / len(cited) if cited else 0.0
         )
+        # Every golden question is legitimate, so any block is a false positive of the guardrails.
+        s["false_block_rate"] = sum(bool(r.get("blocked_by")) for r in rows) / len(rows)
+        s["grounding"] = dict(Counter(r.get("grounding", "skipped") for r in rows))
     return s
 
 
@@ -147,6 +164,8 @@ def to_markdown(s: dict, rows: list[dict], settings) -> str:
             f"| Called the expected tool | {pct(s['tool_selection'])} |",
             f"| Context recall (relevant chunk in prompt) | {pct(s['context_recall'])} |",
             f"| Correct answers citing the expected doc | {pct(s['citation_to_expected_doc'])} |",
+            f"| Legit questions blocked by guardrails | {pct(s['false_block_rate'])} |",
+            f"| Grounding outcomes | {s['grounding']} |",
         ]
     lines += [
         f"| Latency avg / p95 | {s['latency_avg_s']:.2f}s / {s['latency_p95_s']:.2f}s |",
@@ -168,6 +187,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["baseline", "agent"], default="agent")
     parser.add_argument("--concurrency", type=int, default=5)
+    parser.add_argument("--tag", default="", help="suffix for the report file name")
     args = parser.parse_args()
 
     items = load_golden()
@@ -187,7 +207,7 @@ async def main() -> None:
     s = summarize(rows, args.mode)
 
     REPORTS.mkdir(exist_ok=True)
-    stem = REPORTS / f"{dt.date.today().isoformat()}_{args.mode}"
+    stem = REPORTS / f"{dt.date.today().isoformat()}_{args.mode}{'_' + args.tag if args.tag else ''}"
     stem.with_suffix(".json").write_text(
         json.dumps({"summary": s, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8"
     )

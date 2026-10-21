@@ -10,6 +10,7 @@ from app.agent import tools
 from app.agent.prompts import agent_prompt
 from app.agent.tools import AgentContext
 from app.core.config import get_settings
+from app.guardrails import grounding
 from app.llm import client as llm
 from app.rag import citation
 from app.schemas import Citation
@@ -30,6 +31,7 @@ class AgentOut:
     action: str = "none"
     citations: list[Citation] = field(default_factory=list)
     steps: int = 0
+    grounding: str = "skipped"  # supported | rewritten | refused | unsupported_kept | skipped
 
 
 def _action(ctx: AgentContext) -> str:
@@ -94,6 +96,56 @@ async def _prefetch(question: str, ctx: AgentContext, messages: list[dict]) -> N
         await _inject("lookup_order", order_args, ctx, messages)
 
 
+REWRITE = (
+    "[KIỂM TRA NỘI BỘ] Câu trả lời vừa rồi có các ý không được kết quả công cụ hỗ trợ: {claims}. "
+    "Viết lại câu trả lời chỉ dùng thông tin có trong kết quả công cụ. Với điều khách hỏi mà không có bằng "
+    "chứng, nói rõ là bạn chưa có thông tin về chính điều đó và đề nghị chuyển nhân viên. Trả về JSON như cũ."
+)
+SAFE_REFUSAL = (
+    "Xin lỗi, mình chưa có thông tin chắc chắn về vấn đề này. "
+    "Bạn có muốn mình chuyển cho nhân viên hỗ trợ không?"
+)
+SIDE_EFFECTS = {"ticket_created", "appointment_booked", "handoff"}
+
+
+def _needs_grounding(ctx: AgentContext) -> bool:
+    mode = get_settings().grounding_mode
+    if mode == "off":
+        return False
+    if mode == "always":
+        return True
+    scores = [c.rerank_score for c in ctx.retrieved.values() if c.rerank_score is not None]
+    return not scores or max(scores) < get_settings().grounding_skip_score
+
+
+async def _ground(out: AgentOut, messages: list[dict], ctx: AgentContext, history: list[dict]) -> AgentOut:
+    """Check the answer against tool evidence; rewrite once without tools; refuse if still unsupported."""
+    first = await grounding.check(out.answer, ctx.evidence, history, ctx.usage)
+    if first.supported:
+        out.grounding = "supported"
+        return out
+    logger.info("ungrounded answer session=%s claims=%s", ctx.session_id, first.unsupported_claims)
+
+    retry = [
+        *messages,
+        {"role": "assistant", "content": json.dumps({"answer": out.answer}, ensure_ascii=False)},
+        {"role": "system", "content": REWRITE.format(claims="; ".join(first.unsupported_claims))},
+    ]
+    r = await llm.complete(retry, json_mode=True, temperature=0)  # no tools: a rewrite must not act
+    ctx.usage.add_result(r)
+    rewritten = _final(r.text, r.model, ctx, out.steps + 1)
+    second = await grounding.check(rewritten.answer, ctx.evidence, history, ctx.usage)
+    if second.supported:
+        rewritten.grounding = "rewritten"
+        return rewritten
+    if SIDE_EFFECTS & set(ctx.actions):
+        # A ticket/booking already happened; the customer must still get its reference number.
+        rewritten.grounding = "unsupported_kept"
+        return rewritten
+    return AgentOut(answer=SAFE_REFUSAL, model=r.model, action=_action(ctx), steps=rewritten.steps,
+                    grounding="refused")
+
+
 async def run(question: str, ctx: AgentContext, history: list[dict] | None = None) -> AgentOut:
     settings = get_settings()
     messages: list[dict] = [
@@ -110,7 +162,12 @@ async def run(question: str, ctx: AgentContext, history: list[dict] | None = Non
         ctx.usage.add_result(r)
         model = r.model
         if not r.tool_calls:
-            return _final(r.text, model, ctx, step)
+            out = _final(r.text, model, ctx, step)
+            # A request_phone reply is verification guidance, not a factual claim: eval showed the checker
+            # replacing it with "no information", which hid why the share-phone button appeared.
+            if out.action != "request_phone" and _needs_grounding(ctx):
+                out = await _ground(out, messages, ctx, history or [])
+            return out
 
         messages.append(r.assistant_message())
         results = await asyncio.gather(

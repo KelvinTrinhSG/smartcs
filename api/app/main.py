@@ -6,10 +6,11 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 
-from app.agent import loop
+from app.agent import pipeline
 from app.agent.tools import AgentContext
 from app.core.auth import require_internal_key
 from app.core.config import get_settings
+from app.core.ratelimit import RateLimiter
 from app.db.repo import Repo
 from app.rag import ingest, loader
 from app.schemas import (
@@ -25,12 +26,18 @@ from app.schemas import (
 logger = logging.getLogger("smartcs")
 
 MAX_INGEST_BYTES = 10 * 1024 * 1024
+RATE_LIMITED_ANSWER = "Bạn đang gửi tin nhắn hơi nhanh. Vui lòng đợi một chút rồi thử lại nhé."
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.repo = None
+    app.state.limiter = None
+    if settings.redis_url:
+        app.state.limiter = RateLimiter.from_url(
+            settings.redis_url, settings.rate_limit_per_minute, settings.rate_limit_per_day
+        )
     if settings.database_url:
         try:
             app.state.repo = await Repo.connect(settings.database_url)
@@ -39,13 +46,19 @@ async def lifespan(app: FastAPI):
     yield
     if app.state.repo:
         await app.state.repo.close()
+    if app.state.limiter:
+        await app.state.limiter.close()
 
 
-app = FastAPI(title="SmartCS API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="SmartCS API", version="0.4.0", lifespan=lifespan)
 
 
 def get_repo(request: Request) -> Repo | None:
     return getattr(request.app.state, "repo", None)
+
+
+def get_limiter(request: Request) -> RateLimiter | None:
+    return getattr(request.app.state, "limiter", None)
 
 
 @app.get("/healthz")
@@ -54,9 +67,17 @@ def healthz() -> dict:
 
 
 @app.post("/v1/chat", response_model=ChatResponse, dependencies=[Depends(require_internal_key)])
-async def chat(req: ChatRequest, repo: Repo | None = Depends(get_repo)) -> ChatResponse:
+async def chat(
+    req: ChatRequest,
+    repo: Repo | None = Depends(get_repo),
+    limiter: RateLimiter | None = Depends(get_limiter),
+) -> ChatResponse:
     started = time.perf_counter()
     settings = get_settings()
+    if limiter and not await limiter.allow(req.user.id):
+        # Checked before any LLM call, so flooding the bot costs nothing.
+        return ChatResponse(answer=RATE_LIMITED_ANSWER, action="rate_limited", meta=ChatMeta(model="none"))
+
     ctx = AgentContext(
         session_id=req.session_id, channel=req.channel, user_id=req.user.id,
         turn_id=uuid.uuid4().hex[:12], repo=repo,
@@ -70,15 +91,17 @@ async def chat(req: ChatRequest, repo: Repo | None = Depends(get_repo)) -> ChatR
             logger.exception("could not load session state session=%s", req.session_id)
 
     try:
-        out = await loop.run(req.message, ctx, history)
+        turn = await pipeline.handle(req.message, ctx, history)
     except Exception as err:  # noqa: BLE001
         logger.exception("agent failed session=%s", req.session_id)
         raise HTTPException(status_code=502, detail="llm unavailable") from err
 
+    out = turn.out
     latency_ms = int((time.perf_counter() - started) * 1000)
     if repo:
         try:
-            await repo.save_turn(req.session_id, req.message, out.answer)
+            # Only PII-masked text is ever stored.
+            await repo.save_turn(req.session_id, turn.masked_input, out.answer)
             await repo.log_usage(req.session_id, req.channel, out.model, ctx.usage.tokens_in,
                                  ctx.usage.tokens_out, ctx.usage.cost_usd, latency_ms)
         except Exception:  # noqa: BLE001
@@ -97,6 +120,9 @@ async def chat(req: ChatRequest, repo: Repo | None = Depends(get_repo)) -> ChatR
             chunks_used=len(ctx.retrieved),
             steps=out.steps,
             tools=[t["tool"] for t in ctx.tool_log],
+            grounding=out.grounding,
+            blocked_by=turn.blocked_by,
+            pii_masked=turn.pii_found,
         ),
     )
 

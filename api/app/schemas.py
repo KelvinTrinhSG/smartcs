@@ -3,7 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
-Action = Literal["none", "handoff", "ticket_created", "appointment_booked", "request_phone"]
+Action = Literal["none", "handoff", "ticket_created", "appointment_booked", "request_phone", "blocked",
+                 "rate_limited"]
 
 
 class ChatUser(BaseModel):
@@ -34,6 +35,9 @@ class ChatMeta(BaseModel):
     chunks_used: int = 0
     steps: int = 0
     tools: list[str] = []
+    grounding: str = "skipped"
+    blocked_by: str = ""
+    pii_masked: dict[str, int] = {}
 
 
 class ChatResponse(BaseModel):

@@ -3,6 +3,7 @@ Pydantic, and identity (phone, session) comes from the server-side AgentContext,
 
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -43,6 +44,7 @@ class AgentContext:
     retrieved: dict[str, Candidate] = field(default_factory=dict)
     actions: list[str] = field(default_factory=list)
     tool_log: list[dict[str, Any]] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)  # tool results, for the grounding check
 
     def idempotency_key(self, tool: str) -> str:
         return f"{self.session_id}:{self.turn_id}:{tool}"
@@ -178,11 +180,18 @@ async def lookup_order(args: LookupOrderArgs, ctx: AgentContext) -> dict:
 
 
 async def create_ticket(args: CreateTicketArgs, ctx: AgentContext) -> dict:
-    if args.order_id:
+    # Red-team found the model putting someone else's order id in the free-text summary instead of
+    # order_id, which skipped the ownership check. Every order id mentioned anywhere is checked.
+    mentioned = {args.order_id} if args.order_id else set()
+    mentioned |= {m.upper() for m in re.findall(r"\bTZ\d{5,}\b", args.summary, flags=re.IGNORECASE)}
+    if mentioned:
         if not ctx.phone:
             return _need_phone(ctx)
-        if ctx.repo is not None and not await ctx.repo.get_orders(ctx.phone, args.order_id):
-            return {"error": "order_not_found", "message": "Order not found for this customer."}
+        if ctx.repo is not None:
+            for oid in sorted(mentioned):
+                if not await ctx.repo.get_orders(ctx.phone, oid):
+                    msg = f"Order {oid} not found for this customer."
+                    return {"error": "order_not_found", "message": msg}
     payload = {
         "idempotency_key": ctx.idempotency_key("create_ticket"),
         "session_id": ctx.session_id,
@@ -289,4 +298,5 @@ async def dispatch(name: str, raw_args: str, ctx: AgentContext) -> dict:
         logger.warning("tool %s failed: %s", name, err)
         result = {"error": "tool_error", "message": "The system could not complete this action right now."}
     ctx.tool_log.append({"tool": name, "args": args.model_dump(mode="json"), "ok": "error" not in result})
+    ctx.evidence.append(f"[{name}] {json.dumps(result, ensure_ascii=False, default=str)}")
     return result

@@ -1,0 +1,22 @@
+{"text": "Số điện thoại của tôi là 0901234567", "expect": {"PHONE": 1}}
+{"text": "gọi lại cho mình qua số 090 123 4567 nhé", "expect": {"PHONE": 1}}
+{"text": "sdt: 090.123.4567", "expect": {"PHONE": 1}}
+{"text": "Liên hệ +84 912 345 678 hoặc 0987-654-321", "expect": {"PHONE": 2}}
+{"text": "zalo 0356789012 nha shop", "expect": {"PHONE": 1}}
+{"text": "84901234567 là số của mẹ tôi", "expect": {"PHONE": 1}}
+{"text": "Email: nguyen.van.an@gmail.com", "expect": {"EMAIL": 1}}
+{"text": "gửi hóa đơn về an_nguyen+shop@company.com.vn giúp mình", "expect": {"EMAIL": 1}}
+{"text": "CCCD của tôi là 079203001234", "expect": {"CCCD": 1}}
+{"text": "căn cước 001099012345, cần xuất VAT", "expect": {"CCCD": 1}}
+{"text": "cmnd 123456789 cấp năm 2010", "expect": {"CMND": 1}}
+{"text": "Thẻ visa 4111 1111 1111 1111 hết hạn 12/28", "expect": {"CARD": 1}}
+{"text": "số thẻ 5500-0000-0000-0004 bị trừ tiền 2 lần", "expect": {"CARD": 1}}
+{"text": "thanh toán bằng thẻ 4012888888881881, cvv 123", "expect": {"CARD": 1, "CVV": 1}}
+{"text": "Hoàn tiền vào stk 0123456789012 Vietcombank", "expect": {"BANK": 1}}
+{"text": "số tài khoản: 19033344455566 Techcombank", "expect": {"BANK": 1}}
+{"text": "Tôi tên An, sđt 0901234567, email an@example.com, CCCD 079203001234", "expect": {"PHONE": 1, "EMAIL": 1, "CCCD": 1}}
+{"text": "mã bảo mật 456 của thẻ", "expect": {"CVV": 1}}
+{"text": "Laptop giá 15.990.000đ, đơn TZ10001, hotline 1900 0000", "expect": {}}
+{"text": "Giao trong 2–4 ngày, phí 30.000đ, đặt trước 18h", "expect": {}}
+{"text": "Mã giảm giá SALE2026 có dùng được cho đơn 22990000 không?", "expect": {}}
+{"text": "Số serial máy là 5CD1234XYZ, model 15-dw1234", "expect": {}}

@@ -10,3 +10,4 @@ asyncpg>=0.30
 tzdata>=2024.1
 # litellm 1.106 imports its MCP handler on every tool-calling request
 mcp>=1.0
+redis>=5

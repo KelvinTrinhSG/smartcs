@@ -27,6 +27,19 @@ class Settings(BaseSettings):
     # Agent
     agent_max_steps: int = 5
     auto_retrieve: bool = True
+
+    # Guardrails (each can be switched off to measure its effect in evals/run_redteam.py)
+    guard_pii: bool = True
+    guard_injection: bool = True
+    injection_classifier: bool = True
+    # off | risk | always. "risk" checks only when the best rerank score of the evidence is below
+    # grounding_skip_score: on the golden set that is ~15% of turns (weak or no evidence), where fabrication
+    # happens; "always" doubled latency and caused false refusals with a gpt-4o-mini checker.
+    grounding_mode: Literal["off", "risk", "always"] = "risk"
+    grounding_skip_score: float = 10.0
+    guard_output: bool = True
+    rate_limit_per_minute: int = 15
+    rate_limit_per_day: int = 300
     history_messages: int = 10
 
     internal_api_key: str = ""

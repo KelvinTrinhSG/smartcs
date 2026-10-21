@@ -89,6 +89,17 @@ async def test_create_ticket_for_foreign_order_is_refused(ctx, monkeypatch):
     assert res["error"] == "order_not_found"
 
 
+async def test_foreign_order_id_hidden_in_summary_is_refused(ctx, monkeypatch):
+    async def boom(*a, **k):
+        raise AssertionError("n8n must not be called")
+
+    monkeypatch.setattr(n8n_client, "call_tool", boom)
+    repo = FakeRepo(orders_by_phone={PHONE: [order("TZ10001")]})
+    args = {"category": "warranty", "summary": "Khách báo đơn tz10003 lỗi màn hình"}  # no order_id field
+    res = await call("create_ticket", args, ctx(phone=PHONE, repo=repo))
+    assert res["error"] == "order_not_found" and "TZ10003" in res["message"]
+
+
 async def test_create_ticket_sends_idempotency_key(ctx, monkeypatch):
     sent = {}
 

@@ -5,6 +5,7 @@ import pytest
 
 from app.agent import tools
 from app.agent.tools import TZ, AgentContext
+from app.core.config import get_settings
 from app.llm import client as llm
 from app.rag import retriever
 from app.rag.retriever import Candidate
@@ -77,6 +78,16 @@ class ScriptedLLM:
 @pytest.fixture(autouse=True)
 def fixed_now(monkeypatch):
     monkeypatch.setattr(tools, "now", lambda: FIXED_NOW)
+
+
+@pytest.fixture(autouse=True)
+def llm_guards_off(monkeypatch):
+    """LLM-based guards make extra model calls; tests enable them explicitly via `guards`."""
+    s = get_settings()
+    monkeypatch.setattr(s, "injection_classifier", False)
+    monkeypatch.setattr(s, "grounding_mode", "off")
+    monkeypatch.setattr(s, "redis_url", "")
+    return s
 
 
 @pytest.fixture(autouse=True)
