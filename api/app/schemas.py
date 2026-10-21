@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
 class ChatUser(BaseModel):
@@ -17,7 +17,9 @@ class ChatRequest(BaseModel):
 
 class Citation(BaseModel):
     doc_id: str
-    page: int | None = None
+    chunk_id: str
+    title: str = ""
+    section: str = ""
 
 
 class ChatMeta(BaseModel):
@@ -27,6 +29,7 @@ class ChatMeta(BaseModel):
     tokens_out: int = 0
     cost_usd: float = 0.0
     latency_ms: int = 0
+    chunks_used: int = 0
 
 
 class ChatResponse(BaseModel):
@@ -34,3 +37,22 @@ class ChatResponse(BaseModel):
     citations: list[Citation] = []
     action: Literal["none", "handoff", "ticket_created"] = "none"
     meta: ChatMeta
+
+
+class IngestRequest(BaseModel):
+    doc_id: str = Field(pattern=r"^[A-Za-z0-9_\-]{1,64}$")
+    title: str | None = None
+    content: str | None = None
+    file_url: HttpUrl | None = None
+    mime_type: str = "text/markdown"
+
+    @model_validator(mode="after")
+    def _one_source(self) -> "IngestRequest":
+        if (self.content is None) == (self.file_url is None):
+            raise ValueError("provide exactly one of content or file_url")
+        return self
+
+
+class IngestResponse(BaseModel):
+    doc_id: str
+    chunks: int

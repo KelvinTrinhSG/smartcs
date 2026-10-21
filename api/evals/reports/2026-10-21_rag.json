@@ -1,0 +1,923 @@
+{
+  "summary": {
+    "mode": "rag",
+    "n": 55,
+    "accuracy_in_scope": 1.0,
+    "accuracy_no_accent": 1.0,
+    "correct_refusal_out_of_scope": 1.0,
+    "latency_avg_s": 3.2787272727272727,
+    "latency_p95_s": 5.81,
+    "cost_per_1k_usd": 0.27690363636363635,
+    "judge_cost_usd": 0.0031089,
+    "context_recall": 1.0,
+    "citation_to_expected_doc": 1.0
+  },
+  "rows": [
+    {
+      "id": "w01",
+      "type": "in_scope",
+      "question": "Laptop ASUS Vivobook bảo hành bao lâu?",
+      "answer": "Laptop ASUS Vivobook được bảo hành trong 24 tháng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về thời gian bảo hành của Laptop ASUS Vivobook.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 3.4,
+      "cost_usd": 0.00026132,
+      "judge_cost_usd": 4.9199999999999997e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w02",
+      "type": "in_scope",
+      "question": "Mua laptop Dell thì được bảo hành mấy tháng?",
+      "answer": "Laptop Dell được bảo hành 12 tháng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về thời gian bảo hành của laptop Dell.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 6.29,
+      "cost_usd": 0.00026946,
+      "judge_cost_usd": 4.8e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w03",
+      "type": "in_scope",
+      "question": "Điện thoại Samsung Galaxy A55 bảo hành bao lâu?",
+      "answer": "Điện thoại Samsung dòng A, bao gồm cả Galaxy A55, có thời hạn bảo hành là 18 tháng tính từ ngày giao hàng thành công.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác về thời gian bảo hành của điện thoại Samsung Galaxy A55 và không có thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 5.81,
+      "cost_usd": 0.00028495,
+      "judge_cost_usd": 5.97e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w04",
+      "type": "in_scope",
+      "question": "Màn hình máy tính bên shop bảo hành bao lâu?",
+      "answer": "Màn hình máy tính bên shop được bảo hành trong 24 tháng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 3.62,
+      "cost_usd": 0.00026413999999999995,
+      "judge_cost_usd": 5.13e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w05",
+      "type": "in_scope",
+      "question": "Thời hạn bảo hành được tính từ ngày nào?",
+      "answer": "Thời hạn bảo hành được tính từ ngày giao hàng thành công ghi trên đơn hàng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án tham chiếu.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 4.04,
+      "cost_usd": 0.00027385,
+      "judge_cost_usd": 4.935e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w06",
+      "type": "in_scope",
+      "question": "Điện thoại bị rơi vỡ màn hình có được bảo hành không?",
+      "answer": "Điện thoại bị rơi vỡ màn hình sẽ không được bảo hành, vì đây là trường hợp không được bảo hành theo chính sách của TechZone.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#2"
+      ],
+      "latency_s": 2.91,
+      "cost_usd": 0.00030907,
+      "judge_cost_usd": 5.565e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w07",
+      "type": "in_scope",
+      "question": "Tem bảo hành trên máy bị rách thì có được bảo hành nữa không?",
+      "answer": "Nếu tem bảo hành trên máy bị rách, sản phẩm sẽ không được bảo hành.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#2"
+      ],
+      "latency_s": 5.95,
+      "cost_usd": 0.00027641,
+      "judge_cost_usd": 5.43e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w08",
+      "type": "in_scope",
+      "question": "Gửi máy đi bảo hành thì bao lâu mới xong?",
+      "answer": "Thời gian xử lý bảo hành là từ 7 đến 14 ngày làm việc. Nếu quá 14 ngày, bạn sẽ được mượn máy tạm thời.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về thời gian bảo hành và bổ sung thêm thông tin về việc mượn máy tạm thời.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#3"
+      ],
+      "latency_s": 2.87,
+      "cost_usd": 0.00027644,
+      "judge_cost_usd": 5.925e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w09",
+      "type": "in_scope",
+      "question": "Nếu bảo hành lâu quá thì tôi có máy dùng tạm không?",
+      "answer": "Nếu thời gian bảo hành quá 14 ngày, bạn sẽ được mượn máy tạm thời.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#3"
+      ],
+      "latency_s": 3.47,
+      "cost_usd": 0.00027309,
+      "judge_cost_usd": 5.4749999999999996e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w10",
+      "type": "in_scope",
+      "question": "Gửi máy bảo hành qua bưu điện thì ai trả phí ship?",
+      "answer": "Khi gửi máy bảo hành qua bưu điện, TechZone sẽ chịu phí vận chuyển hai chiều.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#3"
+      ],
+      "latency_s": 2.95,
+      "cost_usd": 0.00026735,
+      "judge_cost_usd": 5.325e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w11",
+      "type": "in_scope",
+      "question": "Máy mới mua được 2 tuần bị lỗi phần cứng thì có được đổi máy mới không?",
+      "answer": "Nếu máy bạn mới mua được 2 tuần và bị lỗi phần cứng do nhà sản xuất, bạn hoàn toàn có thể đổi máy mới cùng mẫu trong vòng 30 ngày kể từ ngày giao.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#4",
+        "policy_warranty#1"
+      ],
+      "latency_s": 3.46,
+      "cost_usd": 0.00029027,
+      "judge_cost_usd": 5.94e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "w12",
+      "type": "in_scope",
+      "question": "Tôi tự mang laptop ra tiệm ngoài sửa thì còn được bảo hành không?",
+      "answer": "Nếu bạn tự ý tháo máy hoặc sửa chữa tại nơi không phải trung tâm ủy quyền, sản phẩm sẽ không được bảo hành. Bạn nên mang sản phẩm đến trung tâm bảo hành của TechZone để được hỗ trợ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về việc không được bảo hành nếu tự ý tháo máy hoặc sửa chữa tại nơi không phải trung tâm ủy quyền, đồng thời cung cấp thêm thông tin hữu ích.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#2"
+      ],
+      "latency_s": 3.08,
+      "cost_usd": 0.00029562999999999996,
+      "judge_cost_usd": 7.274999999999999e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r01",
+      "type": "in_scope",
+      "question": "Mua về không thích thì có trả lại được không?",
+      "answer": "Bạn có thể đổi trả sản phẩm trong vòng 7 ngày kể từ ngày giao hàng nếu sản phẩm còn nguyên hộp, đủ phụ kiện và chưa kích hoạt bảo hành điện tử (đối với iPhone, MacBook). Phí đổi trả sẽ miễn phí với phụ kiện và 10% giá trị đơn với laptop và điện thoại đã bóc seal.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác về chính sách đổi trả trong 7 ngày, đồng thời bổ sung thêm chi tiết về phí đổi trả cho các sản phẩm cụ thể.",
+      "handoff": false,
+      "citations": [
+        "policy_return#0"
+      ],
+      "latency_s": 3.29,
+      "cost_usd": 0.00031654,
+      "judge_cost_usd": 7.26e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r02",
+      "type": "in_scope",
+      "question": "Trả lại laptop đã bóc seal thì mất phí bao nhiêu?",
+      "answer": "Khi trả lại laptop đã bóc seal, bạn sẽ mất phí 10% giá trị đơn hàng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_return#0"
+      ],
+      "latency_s": 3.02,
+      "cost_usd": 0.00027403999999999997,
+      "judge_cost_usd": 5.34e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r03",
+      "type": "in_scope",
+      "question": "Đổi trả chuột hoặc tai nghe có mất phí không?",
+      "answer": "Đổi trả chuột hoặc tai nghe sẽ không mất phí, vì chúng thuộc loại phụ kiện.",
+      "correct": true,
+      "reason": "Câu trả lời đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_return#0"
+      ],
+      "latency_s": 3.1,
+      "cost_usd": 0.00026678,
+      "judge_cost_usd": 5.145e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r04",
+      "type": "in_scope",
+      "question": "Hoàn tiền về thẻ tín dụng mất bao lâu?",
+      "answer": "Hoàn tiền về thẻ tín dụng sẽ được thực hiện trong vòng 5–7 ngày làm việc.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về thời gian hoàn tiền và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_return#1"
+      ],
+      "latency_s": 2.93,
+      "cost_usd": 0.00027043999999999994,
+      "judge_cost_usd": 5.475e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r05",
+      "type": "in_scope",
+      "question": "Tôi thanh toán COD thì được hoàn tiền thế nào?",
+      "answer": "Nếu bạn thanh toán bằng hình thức COD, tiền sẽ được hoàn qua chuyển khoản trong vòng 3 ngày làm việc.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về việc hoàn tiền qua chuyển khoản trong 3 ngày làm việc.",
+      "handoff": false,
+      "citations": [
+        "policy_return#1"
+      ],
+      "latency_s": 3.03,
+      "cost_usd": 0.00027462,
+      "judge_cost_usd": 5.429999999999999e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r06",
+      "type": "in_scope",
+      "question": "Đơn đang giao rồi tôi muốn hủy có được không?",
+      "answer": "Bạn có thể từ chối nhận hàng khi đơn đang giao, và sẽ không mất phí.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_return#2"
+      ],
+      "latency_s": 3.1,
+      "cost_usd": 0.00027508999999999997,
+      "judge_cost_usd": 5.325e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "r07",
+      "type": "in_scope",
+      "question": "Tôi vừa đặt hàng xong, muốn hủy có mất phí không?",
+      "answer": "Nếu đơn hàng của bạn đang ở trạng thái \"pending\" hoặc \"confirmed\", bạn có thể hủy miễn phí. Nếu đơn hàng đang giao, bạn có thể từ chối nhận hàng mà không mất phí.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác về việc hủy đơn hàng miễn phí khi đơn hàng đang ở trạng thái 'pending' hoặc 'confirmed', và cũng bổ sung thông tin về việc từ chối nhận hàng mà không mất phí.",
+      "handoff": false,
+      "citations": [
+        "policy_return#2"
+      ],
+      "latency_s": 3.89,
+      "cost_usd": 0.00027594,
+      "judge_cost_usd": 7.425e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s01",
+      "type": "in_scope",
+      "question": "Phí giao hàng của shop là bao nhiêu?",
+      "answer": "Phí giao hàng của shop như sau: Miễn phí cho đơn từ 500.000đ. Đơn dưới 500.000đ sẽ có phí là 30.000đ cho nội thành Hà Nội và TP.HCM, và 40.000đ cho các tỉnh khác.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về phí giao hàng và không có thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#0"
+      ],
+      "latency_s": 2.86,
+      "cost_usd": 0.0002904,
+      "judge_cost_usd": 6.27e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s02",
+      "type": "in_scope",
+      "question": "Đơn 300 nghìn giao về Đà Nẵng thì phí ship bao nhiêu?",
+      "answer": "Phí giao hàng cho đơn 300.000đ về Đà Nẵng là 40.000đ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về phí ship cho đơn hàng 300.000đ về Đà Nẵng.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#0"
+      ],
+      "latency_s": 3.02,
+      "cost_usd": 0.0002697,
+      "judge_cost_usd": 5.715e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s03",
+      "type": "in_scope",
+      "question": "Giao hàng trong nội thành TP.HCM mất bao lâu?",
+      "answer": "Giao hàng trong nội thành TP.HCM sẽ được thực hiện trong 2 giờ (nếu đặt trước 18h) hoặc trong ngày.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#1"
+      ],
+      "latency_s": 3.44,
+      "cost_usd": 0.00028372999999999994,
+      "judge_cost_usd": 5.565e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s04",
+      "type": "in_scope",
+      "question": "Giao hàng ra Hải Phòng mất mấy ngày?",
+      "answer": "Giao hàng ra Hải Phòng sẽ mất từ 2 đến 4 ngày làm việc.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#1"
+      ],
+      "latency_s": 2.8,
+      "cost_usd": 0.0002655,
+      "judge_cost_usd": 5.2499999999999995e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s05",
+      "type": "in_scope",
+      "question": "Nhận hàng có được mở ra kiểm tra trước khi trả tiền không?",
+      "answer": "Khách được mở hộp kiểm tra ngoại quan trước khi thanh toán. Nếu sản phẩm bị móp méo hoặc sai mẫu, khách có thể từ chối nhận và TechZone sẽ giao lại miễn phí.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về việc khách được mở hộp kiểm tra ngoại quan trước khi thanh toán và bổ sung thêm thông tin về quyền từ chối nhận hàng nếu sản phẩm bị lỗi.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#2"
+      ],
+      "latency_s": 2.84,
+      "cost_usd": 0.00027417,
+      "judge_cost_usd": 7.02e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s06",
+      "type": "in_scope",
+      "question": "Cửa hàng TechZone ở Hà Nội nằm ở đâu?",
+      "answer": "Cửa hàng TechZone ở Hà Nội nằm tại địa chỉ 123 Cầu Giấy, Hà Nội. Thời gian mở cửa là từ 8h00 đến 21h30.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp đúng địa chỉ của cửa hàng TechZone và thêm thông tin về thời gian mở cửa, không có mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#3"
+      ],
+      "latency_s": 2.96,
+      "cost_usd": 0.00027569,
+      "judge_cost_usd": 6.0599999999999996e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "s07",
+      "type": "in_scope",
+      "question": "Cửa hàng mở cửa từ mấy giờ đến mấy giờ?",
+      "answer": "Cửa hàng mở cửa từ 8h00 đến 21h30.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về giờ mở cửa của cửa hàng.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#3"
+      ],
+      "latency_s": 2.84,
+      "cost_usd": 0.00025853,
+      "judge_cost_usd": 4.8899999999999996e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "p01",
+      "type": "in_scope",
+      "question": "Shop có hỗ trợ trả góp 0% không?",
+      "answer": "Có, TechZone hỗ trợ trả góp 0% cho đơn hàng từ 3.000.000đ qua thẻ tín dụng của 25 ngân hàng liên kết, với kỳ hạn 6 hoặc 12 tháng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về việc hỗ trợ trả góp 0% cho đơn hàng từ 3.000.000đ và kỳ hạn 6 hoặc 12 tháng, đồng thời cung cấp thêm thông tin về các ngân hàng liên kết.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#1"
+      ],
+      "latency_s": 3.06,
+      "cost_usd": 0.00029927,
+      "judge_cost_usd": 7.785e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "p02",
+      "type": "in_scope",
+      "question": "Trả góp qua công ty tài chính cần giấy tờ gì?",
+      "answer": "Để trả góp qua công ty tài chính, bạn cần chuẩn bị CCCD và trả trước tối thiểu 20% giá trị đơn hàng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#2"
+      ],
+      "latency_s": 2.85,
+      "cost_usd": 0.00028348999999999996,
+      "judge_cost_usd": 5.52e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "p03",
+      "type": "in_scope",
+      "question": "Trả góp thẻ tín dụng kỳ hạn 12 tháng thì phí chuyển đổi bao nhiêu?",
+      "answer": "Phí chuyển đổi trả góp qua thẻ tín dụng kỳ hạn 12 tháng là 1,99%.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#1"
+      ],
+      "latency_s": 2.87,
+      "cost_usd": 0.00028863,
+      "judge_cost_usd": 5.37e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "p04",
+      "type": "in_scope",
+      "question": "Tôi thanh toán bằng ví MoMo được không?",
+      "answer": "Bạn có thể thanh toán bằng ví MoMo khi mua hàng tại TechZone.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác và đầy đủ về việc thanh toán bằng ví MoMo tại TechZone.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#0"
+      ],
+      "latency_s": 2.98,
+      "cost_usd": 0.00026913999999999996,
+      "judge_cost_usd": 5.2199999999999995e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "p05",
+      "type": "in_scope",
+      "question": "Muốn lấy hóa đơn VAT thì phải yêu cầu khi nào?",
+      "answer": "Khách cần yêu cầu xuất hóa đơn VAT trong vòng 24 giờ kể từ khi đặt hàng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#3"
+      ],
+      "latency_s": 2.95,
+      "cost_usd": 0.00025758,
+      "judge_cost_usd": 5.325e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m01",
+      "type": "in_scope",
+      "question": "Thành viên hạng Gold được ưu đãi gì?",
+      "answer": "Thành viên hạng Gold được giảm thêm 4% cho mọi đơn hàng và miễn phí giao hàng trong 2 giờ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#0"
+      ],
+      "latency_s": 3.54,
+      "cost_usd": 0.00028441999999999996,
+      "judge_cost_usd": 5.43e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m02",
+      "type": "in_scope",
+      "question": "1 điểm thành viên đổi được bao nhiêu tiền?",
+      "answer": "1 điểm thành viên đổi được 100đ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#1"
+      ],
+      "latency_s": 2.75,
+      "cost_usd": 0.00026269,
+      "judge_cost_usd": 5.07e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m03",
+      "type": "in_scope",
+      "question": "Điểm tích lũy có bị hết hạn không?",
+      "answer": "Điểm tích lũy có hiệu lực 12 tháng kể từ ngày tích. Sau thời gian này, điểm sẽ hết hạn.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về thời gian hiệu lực của điểm tích lũy và thông tin về việc điểm sẽ hết hạn sau thời gian đó.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#1"
+      ],
+      "latency_s": 4.69,
+      "cost_usd": 0.00026451,
+      "judge_cost_usd": 6.12e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m04",
+      "type": "in_scope",
+      "question": "Mua trả góp qua Home Credit có được tích điểm không?",
+      "answer": "Không, chương trình tích điểm không áp dụng cho đơn trả góp qua công ty tài chính, bao gồm cả Home Credit.",
+      "correct": true,
+      "reason": "Câu trả lời đúng với thông tin chính của đáp án và cung cấp thêm chi tiết hợp lý.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#1"
+      ],
+      "latency_s": 3.06,
+      "cost_usd": 0.00027381,
+      "judge_cost_usd": 5.145e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m05",
+      "type": "in_scope",
+      "question": "Khách hạng Diamond có được bảo hành nhanh hơn không?",
+      "answer": "Có, khách hạng Diamond được ưu tiên bảo hành và thời gian xử lý là 3 ngày làm việc.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#0",
+        "policy_warranty#3"
+      ],
+      "latency_s": 2.77,
+      "cost_usd": 0.00030805,
+      "judge_cost_usd": 5.46e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "m06",
+      "type": "in_scope",
+      "question": "Sinh nhật khách hàng có quà gì không?",
+      "answer": "Thành viên từ hạng Silver trở lên sẽ nhận voucher 200.000đ trong tháng sinh nhật, áp dụng cho đơn từ 2.000.000đ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về voucher 200.000đ cho thành viên từ hạng Silver và điều kiện áp dụng.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#2"
+      ],
+      "latency_s": 4.19,
+      "cost_usd": 0.00027253,
+      "judge_cost_usd": 6.045e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "f01",
+      "type": "in_scope",
+      "question": "Laptop của tôi không lên nguồn thì phải làm sao?",
+      "answer": "Bạn có thể thử các bước sau: 1. Cắm sạc ít nhất 30 phút rồi thử bật lại. 2. Rút sạc, giữ nút nguồn 30 giây để xả điện, sau đó cắm sạc và bật lại. 3. Nếu vẫn không lên, hãy mang máy đến cửa hàng để được kiểm tra miễn phí.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng các bước cần thực hiện và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "faq_troubleshooting#0"
+      ],
+      "latency_s": 3.37,
+      "cost_usd": 0.00031169,
+      "judge_cost_usd": 6.57e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "f02",
+      "type": "in_scope",
+      "question": "Cài lại Windows ở shop có mất phí không?",
+      "answer": "Nếu máy của bạn còn trong thời hạn bảo hành, TechZone cài đặt lại Windows bản quyền miễn phí. Nếu máy đã hết bảo hành, phí cài đặt là 150.000đ và thời gian khoảng 1 giờ.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về phí cài lại Windows tùy thuộc vào tình trạng bảo hành và có thêm chi tiết về thời gian cài đặt.",
+      "handoff": false,
+      "citations": [
+        "faq_troubleshooting#4"
+      ],
+      "latency_s": 3.11,
+      "cost_usd": 0.00027178,
+      "judge_cost_usd": 6.539999999999999e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "f03",
+      "type": "in_scope",
+      "question": "Màn hình mới mua có điểm chết thì có được đổi không?",
+      "answer": "Nếu màn hình mới mua có từ 3 điểm chết trở lên trong 30 ngày đầu kể từ ngày giao hàng, bạn có thể đổi mới màn hình.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "faq_troubleshooting#5"
+      ],
+      "latency_s": 2.74,
+      "cost_usd": 0.00027925,
+      "judge_cost_usd": 5.6399999999999995e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "f04",
+      "type": "in_scope",
+      "question": "iPhone của tôi cắm sạc không vào thì làm gì?",
+      "answer": "Bạn có thể thử vệ sinh cổng sạc bằng tăm nhựa, sử dụng cáp và củ sạc chính hãng, khởi động lại máy và cập nhật iOS. Nếu vẫn không khắc phục được, hãy liên hệ để tạo phiếu bảo hành.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng các bước cần thực hiện và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "faq_troubleshooting#2"
+      ],
+      "latency_s": 3.18,
+      "cost_usd": 0.0002854,
+      "judge_cost_usd": 6.225e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "f05",
+      "type": "in_scope",
+      "question": "Pin laptop chai thì có được bảo hành không?",
+      "answer": "Pin laptop sẽ được bảo hành nếu dung lượng còn dưới 80% trong 6 tháng đầu sử dụng. Nếu pin chai nhanh hơn mức này, bạn có thể yêu cầu bảo hành.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về điều kiện bảo hành pin laptop.",
+      "handoff": false,
+      "citations": [
+        "faq_troubleshooting#1",
+        "policy_warranty#1"
+      ],
+      "latency_s": 3.04,
+      "cost_usd": 0.00028947999999999995,
+      "judge_cost_usd": 5.369999999999999e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "n01",
+      "type": "no_accent",
+      "question": "laptop asus bao hanh bao lau",
+      "answer": "Laptop ASUS Vivobook được bảo hành trong 24 tháng.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác về thời gian bảo hành của laptop ASUS, cụ thể là 24 tháng.",
+      "handoff": false,
+      "citations": [
+        "policy_warranty#0"
+      ],
+      "latency_s": 3.05,
+      "cost_usd": 0.00026349,
+      "judge_cost_usd": 5.2199999999999995e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "n02",
+      "type": "no_accent",
+      "question": "phi ship bao nhieu vay shop",
+      "answer": "Phí giao hàng là miễn phí cho đơn hàng từ 500.000đ. Đối với đơn hàng dưới 500.000đ, phí là 30.000đ cho nội thành Hà Nội và TP.HCM, và 40.000đ cho các tỉnh khác.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính về phí ship và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_shipping#0"
+      ],
+      "latency_s": 3.09,
+      "cost_usd": 0.00028892999999999996,
+      "judge_cost_usd": 6.195e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "n03",
+      "type": "no_accent",
+      "question": "tra gop qua cong ty tai chinh can giay to gi",
+      "answer": "Để trả góp qua công ty tài chính, bạn cần chuẩn bị CCCD và trả trước tối thiểu 20% giá trị đơn hàng.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin chính của đáp án và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_payment#2"
+      ],
+      "latency_s": 3.12,
+      "cost_usd": 0.00027868,
+      "judge_cost_usd": 5.535e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "n04",
+      "type": "no_accent",
+      "question": "hoan tien ve the mat bao lau",
+      "answer": "Nếu bạn thanh toán bằng thẻ hoặc ví điện tử, tiền sẽ được hoàn về đúng phương thức trong 5–7 ngày làm việc.",
+      "correct": true,
+      "reason": "Câu trả lời cung cấp thông tin chính xác về thời gian hoàn tiền và phương thức hoàn tiền.",
+      "handoff": false,
+      "citations": [
+        "policy_return#1"
+      ],
+      "latency_s": 2.79,
+      "cost_usd": 0.00026451999999999997,
+      "judge_cost_usd": 5.235e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "n05",
+      "type": "no_accent",
+      "question": "diem thanh vien co het han khong",
+      "answer": "Điểm thành viên có hiệu lực trong 12 tháng kể từ ngày tích. Sau thời gian này, điểm sẽ hết hạn.",
+      "correct": true,
+      "reason": "Câu trả lời nêu đúng thông tin về thời gian hiệu lực của điểm thành viên và không chứa thông tin mâu thuẫn.",
+      "handoff": false,
+      "citations": [
+        "policy_membership#1"
+      ],
+      "latency_s": 2.68,
+      "cost_usd": 0.00026782,
+      "judge_cost_usd": 5.6699999999999996e-05,
+      "context_rank": 1,
+      "cites_expected_doc": true
+    },
+    {
+      "id": "o01",
+      "type": "out_of_scope",
+      "question": "TechZone có bán tủ lạnh không?",
+      "answer": "Xin lỗi, hiện tại tôi chưa có thông tin về việc TechZone có bán tủ lạnh hay không. Tôi sẽ chuyển yêu cầu của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 2.86,
+      "cost_usd": 0.00024984,
+      "judge_cost_usd": 4.9949999999999994e-05
+    },
+    {
+      "id": "o02",
+      "type": "out_of_scope",
+      "question": "Giá iPhone 16 hiện tại bên shop là bao nhiêu?",
+      "answer": "Xin lỗi, hiện tại tôi chưa có thông tin về giá iPhone 16. Tôi sẽ chuyển yêu cầu của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin về giá và đề nghị chuyển yêu cầu cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 3.25,
+      "cost_usd": 0.0002731,
+      "judge_cost_usd": 5.175e-05
+    },
+    {
+      "id": "o03",
+      "type": "out_of_scope",
+      "question": "Đơn hàng TZ10002 của tôi đang ở đâu rồi?",
+      "answer": "Xin lỗi, tôi chưa có thông tin về trạng thái đơn hàng của bạn. Tôi sẽ chuyển yêu cầu của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin về trạng thái đơn hàng và đề nghị chuyển yêu cầu cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 2.74,
+      "cost_usd": 0.00026756999999999996,
+      "judge_cost_usd": 5.324999999999999e-05
+    },
+    {
+      "id": "o04",
+      "type": "out_of_scope",
+      "question": "Bảo hành có áp dụng khi tôi mang máy ra nước ngoài không?",
+      "answer": "Xin lỗi, tôi chưa có thông tin về việc bảo hành khi mang máy ra nước ngoài. Tôi sẽ chuyển câu hỏi của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển câu hỏi cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 3.04,
+      "cost_usd": 0.00026289,
+      "judge_cost_usd": 5.2199999999999995e-05
+    },
+    {
+      "id": "o05",
+      "type": "out_of_scope",
+      "question": "Shop có chương trình thu cũ đổi mới không?",
+      "answer": "Hiện tại, tôi chưa có thông tin về chương trình thu cũ đổi mới. Tôi sẽ chuyển yêu cầu của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển yêu cầu cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 2.81,
+      "cost_usd": 0.00028875,
+      "judge_cost_usd": 5.145e-05
+    },
+    {
+      "id": "o06",
+      "type": "out_of_scope",
+      "question": "Mua sỉ 50 chiếc laptop cho công ty thì được giảm bao nhiêu?",
+      "answer": "Xin lỗi, tôi chưa có thông tin cụ thể về mức giảm giá cho đơn hàng sỉ. Tôi sẽ chuyển yêu cầu của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 3.0,
+      "cost_usd": 0.00029422,
+      "judge_cost_usd": 5.099999999999999e-05
+    },
+    {
+      "id": "o07",
+      "type": "out_of_scope",
+      "question": "Shop có giao hàng ra nước ngoài không?",
+      "answer": "Xin lỗi, hiện tại tôi chưa có thông tin về việc giao hàng ra nước ngoài. Tôi sẽ chuyển câu hỏi của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển câu hỏi cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 2.65,
+      "cost_usd": 0.00024672999999999996,
+      "judge_cost_usd": 5.1149999999999996e-05
+    },
+    {
+      "id": "o08",
+      "type": "out_of_scope",
+      "question": "MacBook Air M3 có cài được Windows không?",
+      "answer": "Xin lỗi, hiện tại tôi chưa có thông tin về việc MacBook Air M3 có cài được Windows hay không. Tôi sẽ chuyển câu hỏi của bạn cho nhân viên hỗ trợ.",
+      "correct": true,
+      "reason": "Trợ lý không có thông tin cụ thể và đề nghị chuyển câu hỏi cho nhân viên hỗ trợ.",
+      "handoff": true,
+      "citations": [],
+      "latency_s": 3.13,
+      "cost_usd": 0.00026829,
+      "judge_cost_usd": 5.265e-05
+    }
+  ]
+}

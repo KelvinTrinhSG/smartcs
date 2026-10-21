@@ -42,6 +42,9 @@ services:
       N8N_BASE_URL: http://n8n:5678
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data/docs:/data/docs:ro
+      - ./api/evals:/app/evals
     depends_on:
       postgres:
         condition: service_healthy

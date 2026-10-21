@@ -65,7 +65,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "={{ $json.answer }}",
+        "text": "={{ $json.answer + ($json.citations && $json.citations.length ? '\\n\\n📄 Nguồn: ' + [...new Set($json.citations.map(c => c.title.split(' — ')[0]))].join('; ') : '') }}",
         "additionalFields": { "appendAttribution": false }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000004",
