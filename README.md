@@ -1,13 +1,104 @@
 # SmartCS — AI customer service assistant (n8n + Python)
 
-Multi-channel AI support assistant for a mock electronics shop, **TechZone**.
+[![CI](https://github.com/KelvinTrinhSG/smartcs/actions/workflows/ci.yml/badge.svg)](https://github.com/KelvinTrinhSG/smartcs/actions/workflows/ci.yml)
+
+Multi-channel AI support assistant for a mock electronics shop, **TechZone**. It answers in Vietnamese from the
+shop's policy documents, looks up the customer's orders, opens tickets, books store appointments and hands
+off to a human. It works over Telegram (text and voice) and a web chat webhook.
 
 - **Python (FastAPI)** is the "brain": agent loop, RAG, guardrails, model routing, cost tracking, evals.
-- **n8n** handles the plumbing: Telegram/web channels, voice (STT/TTS), business tools (tickets, email, calendar, handoff), scheduled reports.
+- **n8n** handles the plumbing: channels, voice (STT/TTS), business tools (tickets, appointments, handoff),
+  scheduled reports and error alerts.
 
-> Status: **Week 5 — voice & cost.** Telegram voice messages (Whisper → agent → TTS), a verified semantic
-> cache, model routing, prompt caching, a parallel pipeline, daily cost reports and budget alerts.
-> Guardrails (Week 4) and the tool-using agent (Week 3) are described below.
+## Live demo
+
+Hosted on Render (see [Deploy](#deploy-render)).
+
+- **Telegram:** [@techzone_smartcs_bot](https://t.me/techzone_smartcs_bot). Text or a voice message both work.
+- **Web chat webhook:**
+  ```bash
+  curl -X POST https://smartcs-n8n.onrender.com/webhook/chat/web \
+    -H "Content-Type: application/json" -d '{"session_id":"demo1","message":"Laptop ASUS bảo hành bao lâu?"}'
+  ```
+
+Things to try: *"Đổi trả laptop đã bóc seal mất phí không?"*, *"Shop có nhận MoMo không?"*, *"Đơn hàng của tôi
+đâu rồi?"* (shows the share-phone button; demo orders only exist for seeded phone numbers), *"Đặt lịch bảo
+hành 10h sáng mai ở cửa hàng Cầu Giấy"*, or an off-topic question (it should decline). Usage is rate-limited
+per user and a daily budget alert is on.
+
+## Results at a glance
+
+Golden set of 59 Vietnamese questions, answers by `gpt-4o-mini`, judged by `gpt-4o`
+(details and caveats in the per-week sections below):
+
+| | No RAG, no tools | **SmartCS** |
+|---|---|---|
+| Correct answers, in-scope / typed without diacritics | 4.8% / 0% | **100% / 100%** |
+| Correct refusal, out-of-scope | 42.9% | **85.7%** |
+| Right tool called (order, ticket, booking, handoff) | 0% | **100%** |
+| Red-team attack success (32 attacks) | — | **0–3.1%** |
+| Latency avg / p95 | 1.3s / 2.3s | 3.8s / 6.7s |
+| Cost per 1,000 questions | $0.05 | $0.48 |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U(["Customer"]) -->|"text / voice"| TG["Telegram"]
+    W(["Web client"]) -->|"POST /webhook/chat/web"| N8N
+    TG -->|webhook| N8N
+
+    subgraph Render["Render (Singapore)"]
+        N8N["n8n<br/>WF-01 Telegram, WF-02 web<br/>WF-10/11/12 tools<br/>WF-30/31 reports, WF-99 errors"]
+        API["FastAPI /v1/chat<br/>guardrails, cache, router<br/>agent loop + RAG"]
+        PG[("Postgres<br/>orders, history,<br/>tickets, usage")]
+        R[("Key Value<br/>rate limits")]
+    end
+
+    N8N -->|"X-Internal-Key"| API
+    API -->|"tool webhooks<br/>(header auth)"| N8N
+    API --> PG
+    API --> R
+    N8N --> PG
+    API -->|"hybrid search,<br/>semantic cache"| Q[("Qdrant Cloud")]
+    API -->|"chat, embeddings"| OAI["OpenAI"]
+    N8N -->|"Whisper, TTS"| OAI
+    N8N -->|"tickets, handoffs,<br/>cost reports"| STAFF(["Staff chat on Telegram"])
+```
+
+One turn of `/v1/chat`: rate limit → PII mask → injection rules, plus one `gpt-4o-mini` call that both
+classifies attacks and routes simple/complex turns → semantic cache lookup (with an LLM verifier) → KB and order
+prefetch → agent loop with tools → grounding check when evidence is weak → output guard. The triage call, the
+cache lookup and the prefetch run concurrently.
+
+## n8n workflows
+
+All workflows are exported in [n8n/workflows/](n8n/workflows/) without credentials. The Render image imports
+and publishes them on every start.
+
+| Workflow | What it does |
+|---|---|
+| **WF-01 Telegram Entry** | Routes staff `/reply` commands, phone verification (shared contact must be the sender's own), text and voice. Voice: download → Whisper → `/v1/chat` → TTS → audio reply. Shows the share-phone button when the API asks for it. |
+| **WF-02 Web Chat Entry** | Public JSON webhook → `/v1/chat` → response. |
+| **WF-10 / 11 / 12** | Agent tools: create ticket, book appointment, hand off to a human. Header-auth webhook → Postgres insert (idempotent) → respond → notify the staff chat. |
+| **WF-30 / 31** | Daily cost report at 08:00 and an hourly budget alert, from `/v1/metrics/cost`. |
+| **WF-99 Error Handler** | Any failed workflow → Telegram alert. |
+
+![WF-01 Telegram Entry](n8n/screenshots/wf-01.png)
+
+| WF-02 Web Chat Entry | WF-10 create_ticket |
+|---|---|
+| ![WF-02](n8n/screenshots/wf-02.png) | ![WF-10](n8n/screenshots/wf-10.png) |
+| **WF-11 book_appointment** | **WF-12 handoff_to_human** |
+| ![WF-11](n8n/screenshots/wf-11.png) | ![WF-12](n8n/screenshots/wf-12.png) |
+| **WF-30 Daily Cost Report** | **WF-31 Budget Alert** |
+| ![WF-30](n8n/screenshots/wf-30.png) | ![WF-31](n8n/screenshots/wf-31.png) |
+| **WF-99 Error Handler** | |
+| ![WF-99](n8n/screenshots/wf-99.png) | |
+
+---
+
+The sections below are the engineering notes, newest first.
 
 ## Voice & cost (Week 5)
 
@@ -172,7 +263,8 @@ Telegram / Web ──► n8n WF-01/02 ──X-Internal-Key──► FastAPI /v1/
 | `book_appointment` | n8n WF-11 | ≥1h ahead, ≤30 days, 08:00–21:00 on :00/:30; one booking per store slot (DB unique) |
 | `handoff_to_human` | n8n WF-12 | Staff gets a summary on Telegram and replies with `/reply <chat_id> <text>` |
 
-Internal tool webhooks are not reachable through the public tunnel (`/webhook/tool/*` → 404).
+Internal tool webhooks require the `X-Internal-Key` header (403 without it). In local dev they are also hidden
+from the public tunnel (`/webhook/tool/*` → 404).
 
 ## Results (Week 3: agent)
 
@@ -394,6 +486,7 @@ api/app/rag/      chunking, sparse vectors, Qdrant store, hybrid retriever, rera
 api/tests/        unit tests + integration tests with n8n mocked via respx
 api/evals/        golden set, eval runners, reports
 n8n/workflows/    exported n8n workflows (no credentials)
+n8n/screenshots/  workflow screenshots used in this README
 n8n/Dockerfile    n8n image for Render (workflows baked in, credentials from env)
 render.yaml       Render Blueprint
 data/docs/        mock policy documents (knowledge base)
@@ -411,4 +504,5 @@ data/seed/        SQL schema + mock products/orders
 - [ ] Week 3 — Google Sheets / Gmail / Calendar in WF-10/11 (records currently live in Postgres)
 - [x] Week 4 — hallucination control & security (PII, injection, grounding, red-team)
 - [x] Week 5 — voice, routing, semantic cache, prompt caching, cost reports, budget alert, error handler
-- [ ] Week 6 — CI/CD, deploy, demo
+- [x] Week 6 — deploy on Render (Blueprint), auto-deploy after CI, README with architecture and workflows
+- [ ] Week 6 — eval regression in CI, demo video

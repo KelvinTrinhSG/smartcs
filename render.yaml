@@ -71,6 +71,7 @@ services:
     autoDeployTrigger: checksPass
     buildFilter:
       paths: ["n8n/**"]
+      ignoredPaths: ["n8n/screenshots/**"]
     envVars:
       - fromGroup: smartcs-shared
       - key: PORT
