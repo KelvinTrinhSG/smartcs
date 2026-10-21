@@ -90,7 +90,7 @@ async def test_step_limit_falls_back_safely(ctx, script, fake_retrieve):
 async def test_non_json_final_answer_is_returned_as_text(ctx, monkeypatch):
     from app.llm import client as llm
 
-    async def raw(messages, **kw):
+    async def raw(messages, model=None, **kw):
         return llm.LLMResult("Xin chào!", "fake", 1, 1, 0.0)
 
     monkeypatch.setattr(llm, "complete", raw)

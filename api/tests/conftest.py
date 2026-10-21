@@ -87,6 +87,7 @@ def llm_guards_off(monkeypatch):
     monkeypatch.setattr(s, "injection_classifier", False)
     monkeypatch.setattr(s, "grounding_mode", "off")
     monkeypatch.setattr(s, "redis_url", "")
+    monkeypatch.setattr(s, "semantic_cache", False)  # never touch Qdrant from unit tests
     return s
 
 

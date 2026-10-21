@@ -2,12 +2,14 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from datetime import date, datetime
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 
 from app.agent import pipeline
-from app.agent.tools import AgentContext
+from app.agent.tools import TZ, AgentContext
+from app.cache import semantic
 from app.core.auth import require_internal_key
 from app.core.config import get_settings
 from app.core.ratelimit import RateLimiter
@@ -103,7 +105,9 @@ async def chat(
             # Only PII-masked text is ever stored.
             await repo.save_turn(req.session_id, turn.masked_input, out.answer)
             await repo.log_usage(req.session_id, req.channel, out.model, ctx.usage.tokens_in,
-                                 ctx.usage.tokens_out, ctx.usage.cost_usd, latency_ms)
+                                 ctx.usage.tokens_out, ctx.usage.cost_usd, latency_ms, route=turn.route,
+                                 cache_hit=turn.route == "cache", cached_tokens=ctx.usage.cached_tokens,
+                                 llm_calls=ctx.usage.llm_calls)
         except Exception:  # noqa: BLE001
             logger.exception("could not persist turn session=%s", req.session_id)
 
@@ -123,8 +127,29 @@ async def chat(
             grounding=out.grounding,
             blocked_by=turn.blocked_by,
             pii_masked=turn.pii_found,
+            cache_hit=turn.route == "cache",
+            route=turn.route,
+            cached_tokens=ctx.usage.cached_tokens,
         ),
     )
+
+
+@app.get("/v1/metrics/cost", dependencies=[Depends(require_internal_key)])
+async def cost_metrics(day: date | None = None, repo: Repo | None = Depends(get_repo)) -> dict:
+    """Daily totals for WF-30 (morning report) and WF-31 (budget alert). `day` defaults to today (VN time)."""
+    if repo is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    settings = get_settings()
+    day = day or datetime.now(TZ).date()
+    report = await repo.cost_report(day)
+    turns = report.get("turns") or 0
+    report.update(
+        date=day.isoformat(),
+        cost_per_1k_turns_usd=round(report["cost_usd"] / turns * 1000, 4) if turns else 0.0,
+        daily_budget_usd=settings.daily_budget_usd,
+        over_budget=report["cost_usd"] > settings.daily_budget_usd,
+    )
+    return report
 
 
 @app.post("/v1/verify", response_model=VerifyResponse, dependencies=[Depends(require_internal_key)])
@@ -154,4 +179,5 @@ async def ingest_doc(req: IngestRequest) -> IngestResponse:
         raise HTTPException(status_code=415, detail=str(err)) from err
 
     chunks = await ingest.ingest_document(doc)
+    await semantic.clear()  # cached answers may quote the policy that just changed
     return IngestResponse(doc_id=req.doc_id, chunks=chunks)

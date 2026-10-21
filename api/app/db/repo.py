@@ -1,6 +1,6 @@
 """All SQL the API runs. The agent only reaches the DB through these methods."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 import asyncpg
@@ -17,6 +17,21 @@ WHERE c.phone = $1 AND ($2::text IS NULL OR o.order_id = $2)
 GROUP BY o.order_id
 ORDER BY o.created_at DESC
 LIMIT 10
+"""
+
+
+COST_SQL = """
+SELECT count(*)                                             AS turns,
+       count(DISTINCT session_id)                           AS sessions,
+       coalesce(sum(cost_usd), 0)::float                    AS cost_usd,
+       coalesce(sum(tokens_in), 0)                          AS tokens_in,
+       coalesce(sum(tokens_out), 0)                         AS tokens_out,
+       coalesce(sum(cached_tokens), 0)                      AS cached_tokens,
+       coalesce(avg(cache_hit::int), 0)::float              AS cache_hit_rate,
+       coalesce(percentile_cont(0.5) WITHIN GROUP (ORDER BY latency_ms), 0)::int  AS latency_p50_ms,
+       coalesce(percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms), 0)::int AS latency_p95_ms
+FROM usage_logs
+WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = $1
 """
 
 
@@ -62,11 +77,27 @@ class Repo:
 
     async def log_usage(
         self, session_id: str, channel: str, model: str, tokens_in: int, tokens_out: int,
-        cost_usd: float, latency_ms: int, created_at: datetime | None = None,
+        cost_usd: float, latency_ms: int, *, route: str = "small", cache_hit: bool = False,
+        cached_tokens: int = 0, llm_calls: int = 0, created_at: datetime | None = None,
     ) -> None:
         await self.pool.execute(
             """INSERT INTO usage_logs
-                   (session_id, channel, model, tokens_in, tokens_out, cost_usd, latency_ms, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, now()))""",
-            session_id, channel, model, tokens_in, tokens_out, cost_usd, latency_ms, created_at,
+                   (session_id, channel, model, tokens_in, tokens_out, cost_usd, latency_ms, route, cache_hit,
+                    cached_tokens, llm_calls, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($12, now()))""",
+            session_id, channel, model, tokens_in, tokens_out, cost_usd, latency_ms, route, cache_hit,
+            cached_tokens, llm_calls, created_at,
         )
+
+    async def cost_report(self, day: date) -> dict[str, Any]:
+        """Totals for one calendar day in Vietnam time (WF-30 daily report, WF-31 budget alert)."""
+        row = await self.pool.fetchrow(COST_SQL, day)
+        routes = await self.pool.fetch(
+            """SELECT route, count(*) AS n FROM usage_logs
+               WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = $1
+               GROUP BY route ORDER BY n DESC""",
+            day,
+        )
+        out = dict(row) if row else {}
+        out["routes"] = {r["route"]: r["n"] for r in routes}
+        return out

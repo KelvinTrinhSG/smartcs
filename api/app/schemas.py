@@ -38,6 +38,8 @@ class ChatMeta(BaseModel):
     grounding: str = "skipped"
     blocked_by: str = ""
     pii_masked: dict[str, int] = {}
+    route: str = "small"
+    cached_tokens: int = 0
 
 
 class ChatResponse(BaseModel):

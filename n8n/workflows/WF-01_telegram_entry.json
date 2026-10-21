@@ -4,25 +4,47 @@
   "active": false,
   "nodes": [
     {
-      "parameters": { "updates": ["message"], "additionalFields": {} },
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000001",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0101",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "c0000000-0000-4000-8000-000000000010",
               "leftValue": "={{ String($json.message.chat.id) === String($env.STAFF_TELEGRAM_CHAT_ID) && ($json.message.text || '').startsWith('/reply') }}",
               "rightValue": "",
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -33,7 +55,10 @@
       "name": "Staff reply?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [220, 0]
+      "position": [
+        220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -43,32 +68,54 @@
       "name": "Parse Reply",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, -260]
+      "position": [
+        440,
+        -260
+      ]
     },
     {
       "parameters": {
         "chatId": "={{ $json.target }}",
         "text": "={{ $json.text }}",
-        "additionalFields": { "appendAttribution": false }
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000012",
       "name": "Relay To Customer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [660, -260],
+      "position": [
+        660,
+        -260
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0112",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "c0000000-0000-4000-8000-000000000020",
               "leftValue": "={{ !!$json.message.contact && $json.message.contact.user_id === $json.message.from.id }}",
               "rightValue": "",
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -79,7 +126,10 @@
       "name": "Own contact shared?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [440, 40]
+      "position": [
+        440,
+        40
+      ]
     },
     {
       "parameters": {
@@ -87,18 +137,28 @@
         "url": "={{ $env.SMARTCS_API_URL }}/v1/verify",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-Internal-Key", "value": "={{ $env.SMARTCS_INTERNAL_KEY }}" }]
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ user_id: 'tg_' + $json.message.from.id, phone: $json.message.contact.phone_number }) }}",
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000021",
       "name": "Verify Phone",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [660, -100],
+      "position": [
+        660,
+        -100
+      ],
       "onError": "continueErrorOutput"
     },
     {
@@ -106,27 +166,48 @@
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "={{ '✅ Đã xác minh số điện thoại ' + $json.phone_masked + '. Bạn có thể hỏi về đơn hàng của mình, ví dụ: \"Đơn hàng của tôi đang ở đâu?\"' }}",
         "replyMarkup": "replyKeyboardRemove",
-        "replyKeyboardRemove": { "remove_keyboard": true },
-        "additionalFields": { "appendAttribution": false }
+        "replyKeyboardRemove": {
+          "remove_keyboard": true
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000022",
       "name": "Send Verified",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [900, -160],
+      "position": [
+        900,
+        -160
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0122",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "c0000000-0000-4000-8000-000000000001",
               "leftValue": "={{ $json.message.text }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -137,7 +218,10 @@
       "name": "Has text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [660, 180]
+      "position": [
+        660,
+        180
+      ]
     },
     {
       "parameters": {
@@ -145,30 +229,48 @@
         "url": "={{ $env.SMARTCS_API_URL }}/v1/chat",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-Internal-Key", "value": "={{ $env.SMARTCS_INTERNAL_KEY }}" }]
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ session_id: 'tg_' + $json.message.chat.id, channel: 'telegram', user: { id: 'tg_' + $json.message.from.id }, message: $json.message.text }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000003",
       "name": "Call SmartCS API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 100],
+      "position": [
+        900,
+        100
+      ],
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "c0000000-0000-4000-8000-000000000030",
               "leftValue": "={{ $json.action }}",
               "rightValue": "request_phone",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -179,7 +281,10 @@
       "name": "Needs phone?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1120, 40]
+      "position": [
+        1120,
+        40
+      ]
     },
     {
       "parameters": {
@@ -188,103 +293,554 @@
         "replyMarkup": "replyKeyboard",
         "replyKeyboard": {
           "rows": [
-            { "row": { "buttons": [{ "text": "📱 Chia sẻ số điện thoại", "additionalFields": { "request_contact": true } }] } }
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📱 Chia sẻ số điện thoại",
+                    "additionalFields": {
+                      "request_contact": true
+                    }
+                  }
+                ]
+              }
+            }
           ]
         },
-        "replyKeyboardOptions": { "one_time_keyboard": true, "resize_keyboard": true },
-        "additionalFields": { "appendAttribution": false }
+        "replyKeyboardOptions": {
+          "one_time_keyboard": true,
+          "resize_keyboard": true
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000031",
       "name": "Ask For Phone",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1360, -40],
+      "position": [
+        1360,
+        -40
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0131",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "={{ $json.answer + ($json.citations && $json.citations.length ? '\\n\\n📄 Nguồn: ' + [...new Set($json.citations.map(c => c.title.split(' — ')[0]))].join('; ') : '') }}",
-        "additionalFields": { "appendAttribution": false }
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000004",
       "name": "Send Answer",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1360, 120],
+      "position": [
+        1360,
+        120
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0102",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "Xin lỗi, hệ thống đang bận. Bạn vui lòng thử lại sau ít phút nhé.",
-        "additionalFields": { "appendAttribution": false }
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000005",
       "name": "Send API Error",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 280],
+      "position": [
+        1120,
+        280
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0103",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     },
     {
       "parameters": {
         "chatId": "={{ $json.message.chat.id }}",
-        "text": "Hiện SmartCS chỉ hỗ trợ tin nhắn văn bản. Tin nhắn thoại sẽ sớm được hỗ trợ!",
-        "additionalFields": { "appendAttribution": false }
+        "text": "SmartCS hiện hỗ trợ tin nhắn văn bản và tin nhắn thoại. Bạn vui lòng gửi câu hỏi bằng một trong hai cách nhé!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "b2e1d7c3-0001-4c1e-9a10-000000000006",
       "name": "Send Text Only",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [900, 360],
+      "position": [
+        900,
+        300
+      ],
       "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0104",
-      "credentials": { "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" } }
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dcf121a7-30bc-4fef-8552-ff65254c7f09",
+              "leftValue": "={{ !!$json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5917af2a-e18f-4e32-9f7a-17b3c642293b",
+      "name": "Voice?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "download": true,
+        "additionalFields": {}
+      },
+      "id": "82c3d281-9362-4e4a-9228-ca50424bf17f",
+      "name": "Download Voice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        900,
+        420
+      ],
+      "webhookId": "1f752d8c-68d9-48ee-9ebf-1c0818024635",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "data",
+        "options": {
+          "language": "vi"
+        }
+      },
+      "id": "4ff0ca77-86a0-43d6-9b77-ec7eed3dc480",
+      "name": "Transcribe",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        420
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "oaicredsmartcs01",
+          "name": "OpenAI SmartCS"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMARTCS_API_URL }}/v1/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session_id: 'tg_' + $('Telegram Trigger').item.json.message.chat.id, channel: 'voice', user: { id: 'tg_' + $('Telegram Trigger').item.json.message.from.id }, message: $json.text }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "4896a6a7-5cf5-46db-88e5-0022d045cb85",
+      "name": "Call SmartCS API (voice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        420
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2f165e5c-3bd8-47c7-af31-8138f73e83f0",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "request_phone",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4f946eda-a826-416d-bbf9-8f3e0be4c60b",
+      "name": "Needs phone? (voice)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1560,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "generate",
+        "model": "tts-1",
+        "input": "={{ $json.answer }}",
+        "voice": "nova",
+        "options": {
+          "response_format": "mp3"
+        }
+      },
+      "id": "47fea777-d811-4a3f-8e7e-1b397b302e46",
+      "name": "Speak",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1780,
+        500
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "oaicredsmartcs01",
+          "name": "OpenAI SmartCS"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "={{ ('🗣 Bạn hỏi: ' + $('Transcribe').item.json.text + '\n\n' + $('Call SmartCS API (voice)').item.json.answer).slice(0, 1000) }}",
+          "title": "SmartCS",
+          "performer": "TechZone"
+        }
+      },
+      "id": "768040a4-6483-4446-931a-1a0366da5e4a",
+      "name": "Send Voice Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        500
+      ],
+      "webhookId": "4ff800e0-8835-4714-81e3-4efd44cf72cf",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
     }
   ],
   "connections": {
-    "Telegram Trigger": { "main": [[{ "node": "Staff reply?", "type": "main", "index": 0 }]] },
-    "Staff reply?": {
+    "Telegram Trigger": {
       "main": [
-        [{ "node": "Parse Reply", "type": "main", "index": 0 }],
-        [{ "node": "Own contact shared?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Staff reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Parse Reply": { "main": [[{ "node": "Relay To Customer", "type": "main", "index": 0 }]] },
+    "Staff reply?": {
+      "main": [
+        [
+          {
+            "node": "Parse Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Own contact shared?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reply": {
+      "main": [
+        [
+          {
+            "node": "Relay To Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Own contact shared?": {
       "main": [
-        [{ "node": "Verify Phone", "type": "main", "index": 0 }],
-        [{ "node": "Has text?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Verify Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Voice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Verify Phone": {
       "main": [
-        [{ "node": "Send Verified", "type": "main", "index": 0 }],
-        [{ "node": "Send API Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Verified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has text?": {
       "main": [
-        [{ "node": "Call SmartCS API", "type": "main", "index": 0 }],
-        [{ "node": "Send Text Only", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Call SmartCS API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Text Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Call SmartCS API": {
       "main": [
-        [{ "node": "Needs phone?", "type": "main", "index": 0 }],
-        [{ "node": "Send API Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Needs phone?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Needs phone?": {
       "main": [
-        [{ "node": "Ask For Phone", "type": "main", "index": 0 }],
-        [{ "node": "Send Answer", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Ask For Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice?": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Call SmartCS API (voice)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call SmartCS API (voice)": {
+      "main": [
+        [
+          {
+            "node": "Needs phone? (voice)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs phone? (voice)": {
+      "main": [
+        [
+          {
+            "node": "Ask For Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Speak",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speak": {
+      "main": [
+        [
+          {
+            "node": "Send Voice Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send API Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "wf99errorhandler"
+  },
   "pinData": {}
 }

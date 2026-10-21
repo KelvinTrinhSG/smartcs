@@ -5,9 +5,72 @@ Multi-channel AI support assistant for a mock electronics shop, **TechZone**.
 - **Python (FastAPI)** is the "brain": agent loop, RAG, guardrails, model routing, cost tracking, evals.
 - **n8n** handles the plumbing: Telegram/web channels, voice (STT/TTS), business tools (tickets, email, calendar, handoff), scheduled reports.
 
-> Status: **Week 4 — guardrails.** Tool-using agent with grounded answers, plus PII masking, prompt-injection
-> defence, a risk-gated grounding check, prompt-leak detection and rate limiting, all measured by a red-team
-> set. Voice and cost optimisation come next.
+> Status: **Week 5 — voice & cost.** Telegram voice messages (Whisper → agent → TTS), a verified semantic
+> cache, model routing, prompt caching, a parallel pipeline, daily cost reports and budget alerts.
+> Guardrails (Week 4) and the tool-using agent (Week 3) are described below.
+
+## Voice & cost (Week 5)
+
+```
+Telegram voice ─► n8n WF-01: download .oga ─► OpenAI Whisper (vi) ─► /v1/chat channel=voice ─► TTS (tts-1, nova)
+               ─► sendAudio with caption (transcript + answer); order questions still get the share-phone button
+
+/v1/chat:  PII mask ─► ┌ injection rules + triage call (attack? simple/complex?) ┐
+                       ├ semantic cache: Qdrant candidate ─► LLM "same answer?"  ├─► blocked | cached | agent
+                       └ KB + order prefetch (cancelled on block / cache hit)    ┘   (gpt-4o for complex turns)
+n8n WF-30 08:00 daily report · WF-31 hourly budget alert (once per day) · WF-99 any workflow error → Telegram
+```
+
+**What changed and what it bought** (golden set, same judge, Week 4 → Week 5): accuracy unchanged
+(100% in-scope, 100% no-diacritics, 85.7% out-of-scope, 100% actions, 0 false blocks); average latency
+**4.55s → 3.80s** from running triage, cache lookup and KB prefetch concurrently; cost per 1,000 questions
+$0.46 → $0.48 (the cache verifier and triage call are paid on every turn; the golden set has no repeats, so
+the cache cannot pay for itself there).
+
+**Replayed FAQ traffic** ([evals/run_cost.py](api/evals/run_cost.py)): 28 questions, then 20 paraphrases
+(a cache hit is correct) and 20 near misses (a cache hit would be wrong), every answer judged by gpt-4o:
+
+| | Cache + router off | **On** |
+|---|---|---|
+| Cost per 1,000 turns | $0.427 | **$0.400** |
+| Latency avg / p95 | 3.33s / 4.16s | 3.15s / 4.25s |
+| Paraphrases served from cache | 0/20 | **8/20** |
+| Near misses served from cache (wrong answer) | – | **0/20** |
+| Accuracy of cached answers | – | **100%** |
+| A cache hit vs a full agent turn | – | **1.24s / $0.00011 vs 3.41s / $0.00044** |
+
+Savings scale with the repeat rate of real traffic; on this replay only 8 of 68 turns were repeats.
+
+### The semantic cache needed a verifier
+The usual recipe (cosine ≥ 0.90 on question embeddings) is unsafe for Vietnamese with `text-embedding-3-small`.
+Measured on 20 paraphrase and 20 near-miss pairs ([run_cache_threshold.py](api/evals/run_cache_threshold.py)):
+
+| | Paraphrase recall | Wrong answers served |
+|---|---|---|
+| Cosine ≥ 0.90 | 0% | **3** |
+| Cosine ≥ 0.994 (first threshold with zero errors) | 0% | 0 |
+| **Cosine ≥ 0.60 candidate + gpt-4o-mini "same answer?" check** | **55%** | **0** |
+
+Near misses are *closer* than paraphrases: "trả laptop **đã** bóc seal" vs "**chưa** bóc seal" score 0.989 (10% fee
+vs free), while "shop có nhận MoMo không" vs "thanh toán bằng ví MoMo được không" score 0.841. The verifier is
+conservative (its 8 disagreements with the labels are all "different" for true paraphrases), which costs recall,
+never correctness. Answers are cached only when they come from the knowledge base alone: no PII, no order or
+side-effect tools, grounded, and no reference to earlier turns ("nó", "cái đó", …). Ingest clears the cache.
+
+### Other levers
+- **Prompt caching.** The agent prompt was reordered so the ~2,000-token static part (rules, tool policy)
+  comes first and time/identity/channel last; OpenAI now serves ~40% of input tokens from its prompt cache
+  (1,280 cached tokens per agent call). A unit test guards the byte-identical prefix.
+- **Router.** The injection classifier already makes one gpt-4o-mini call per turn, so it also labels the turn
+  simple/complex; complex turns (angry complaints, several requests at once) go to gpt-4o. One routed complaint
+  cost $0.0057 vs ~$0.0004, so routing is only worth it if the larger model measurably helps those turns —
+  not yet shown on this data; it is a single flag (`ROUTER_ENABLED`).
+- **Cost reporting.** `usage_logs` now records route, cache hit, cached tokens and LLM calls per turn;
+  `/v1/metrics/cost` aggregates a day (Vietnam time) for WF-30/WF-31. Voice STT/TTS cost is billed inside n8n
+  and is not in these numbers.
+
+**Remaining quality issues seen in the replay** (not cache-related): one false refusal by the grounding check,
+and the agent over-generalising "no points for finance-company instalments" to credit-card instalments.
 
 ## Guardrails (Week 4)
 
@@ -232,7 +295,13 @@ docker compose exec api python -m evals.run_eval --mode agent   # side-effect to
 docker compose exec api python -m evals.run_redteam --guards off
 docker compose exec api python -m evals.run_redteam --guards on
 docker compose exec api python -m evals.run_pii                 # no LLM calls
+docker compose exec api python -m evals.run_cache_threshold     # semantic cache safety
+docker compose exec api python -m evals.run_cost --profile off  # cost A/B on replayed FAQ traffic
+docker compose exec api python -m evals.run_cost --profile on
 ```
+
+Schema changes for an existing database: `data/seed/02_agent.sql`, then `data/seed/03_cost.sql`.
+Voice needs an n8n *OpenAI* credential named `OpenAI SmartCS`.
 
 Call the API directly:
 
@@ -311,5 +380,5 @@ data/seed/        SQL schema + mock products/orders
 - [x] Week 3 — agent loop + n8n tools (ticket, appointment, handoff), phone verification, memory
 - [ ] Week 3 — Google Sheets / Gmail / Calendar in WF-10/11 (records currently live in Postgres)
 - [x] Week 4 — hallucination control & security (PII, injection, grounding, red-team)
-- [ ] Week 5 — voice, routing, semantic cache, cost reports
+- [x] Week 5 — voice, routing, semantic cache, prompt caching, cost reports, budget alert, error handler
 - [ ] Week 6 — CI/CD, deploy, demo

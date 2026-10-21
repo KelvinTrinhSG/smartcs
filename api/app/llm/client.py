@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass, field
 
 import litellm
@@ -16,6 +17,7 @@ class LLMResult:
     tokens_out: int
     cost_usd: float
     tool_calls: list[dict] = field(default_factory=list)  # [{"id", "name", "arguments"}]
+    cached_tokens: int = 0  # prompt tokens served from OpenAI's prompt cache
 
     def assistant_message(self) -> dict:
         """The assistant turn to append to the conversation before sending tool results back."""
@@ -69,6 +71,7 @@ async def complete(
         {"id": tc.id, "name": tc.function.name, "arguments": tc.function.arguments or "{}"}
         for tc in (getattr(message, "tool_calls", None) or [])
     ]
+    details = getattr(usage, "prompt_tokens_details", None)
     return LLMResult(
         text=message.content or "",
         model=model,
@@ -76,10 +79,19 @@ async def complete(
         tokens_out=usage.completion_tokens,
         cost_usd=_cost(resp),
         tool_calls=tool_calls,
+        cached_tokens=(getattr(details, "cached_tokens", 0) or 0) if details else 0,
     )
 
 
+# The semantic cache and the KB search embed the same question in the same turn; keep recent single-text
+# embeddings so the second call is free. Bounded FIFO, process-local.
+_EMBED_CACHE: OrderedDict[str, list[float]] = OrderedDict()
+_EMBED_CACHE_MAX = 512
+
+
 async def embed(texts: list[str], usage: Usage | None = None) -> list[list[float]]:
+    if len(texts) == 1 and texts[0] in _EMBED_CACHE:
+        return [_EMBED_CACHE[texts[0]]]
     settings = get_settings()
     vectors: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH):
@@ -93,4 +105,8 @@ async def embed(texts: list[str], usage: Usage | None = None) -> list[list[float
         vectors += [d["embedding"] if isinstance(d, dict) else d.embedding for d in resp.data]
         if usage:
             usage.add(tokens_in=getattr(resp.usage, "prompt_tokens", 0) or 0, cost_usd=_cost(resp))
+    if len(texts) == 1:
+        _EMBED_CACHE[texts[0]] = vectors[0]
+        if len(_EMBED_CACHE) > _EMBED_CACHE_MAX:
+            _EMBED_CACHE.popitem(last=False)
     return vectors

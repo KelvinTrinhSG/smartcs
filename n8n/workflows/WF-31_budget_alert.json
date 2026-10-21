@@ -1,0 +1,152 @@
+{
+  "id": "wf31budgetalert",
+  "name": "WF-31 Budget Alert",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "0c92c78b-5fbb-4635-8854-f20833845e40",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SMARTCS_API_URL }}/v1/metrics/cost",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "af068491-8747-4411-93d3-875fee2c0af1",
+      "name": "Get Today Cost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.first().json;\nconst state = $getWorkflowStaticData('global');\nif (!m.over_budget || state.lastAlertDate === m.date) return [];\nstate.lastAlertDate = m.date;\nconst usd = (x) => 'US$' + Number(x).toFixed(4);\nconst text = '🚨 SmartCS vượt ngân sách ngày ' + m.date + ': ' + usd(m.cost_usd) + ' / ' + usd(m.daily_budget_usd)\n  + ' sau ' + m.turns + ' lượt chat.\\nKiểm tra traffic bất thường hoặc tăng DAILY_BUDGET_USD.';\nreturn [{ json: { ...m, text } }];"
+      },
+      "id": "b38c9089-0899-4a7b-ae3e-5282b2cf529d",
+      "name": "Over budget, not yet alerted?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.STAFF_TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "650a8fbc-298e-4f8b-bc2d-40031c594abb",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ],
+      "webhookId": "b51a8ee2-4317-4350-9ca3-5e44186c0919",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "07c8f1f2-30d4-4f2c-bf87-9e4a417295bc",
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Get Today Cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today Cost": {
+      "main": [
+        [
+          {
+            "node": "Over budget, not yet alerted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Over budget, not yet alerted?": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "Get Today Cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "wf99errorhandler",
+    "timezone": "Asia/Ho_Chi_Minh"
+  },
+  "pinData": {}
+}

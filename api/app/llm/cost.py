@@ -14,11 +14,16 @@ class Usage:
     tokens_in: int = 0
     tokens_out: int = 0
     cost_usd: float = 0.0
+    cached_tokens: int = 0
+    llm_calls: int = 0
 
-    def add(self, tokens_in: int = 0, tokens_out: int = 0, cost_usd: float = 0.0) -> None:
+    def add(self, tokens_in: int = 0, tokens_out: int = 0, cost_usd: float = 0.0, cached_tokens: int = 0
+            ) -> None:
         self.tokens_in += tokens_in
         self.tokens_out += tokens_out
         self.cost_usd += cost_usd
+        self.cached_tokens += cached_tokens
 
     def add_result(self, r: LLMResult) -> None:
-        self.add(r.tokens_in, r.tokens_out, r.cost_usd)
+        self.add(r.tokens_in, r.tokens_out, r.cost_usd, r.cached_tokens)
+        self.llm_calls += 1

@@ -82,18 +82,21 @@ async def _inject(name: str, args: dict, ctx: AgentContext, messages: list[dict]
                      "content": json.dumps(result, ensure_ascii=False, default=str)})
 
 
-async def _prefetch(question: str, ctx: AgentContext, messages: list[dict]) -> None:
-    """Deterministic tool calls for the two cases where eval showed the model was unreliable.
+async def prepare(question: str, ctx: AgentContext) -> list[dict]:
+    """Deterministic, read-only tool calls made before the first LLM turn (returned as messages).
 
     - search_kb with the customer's own words: when the model wrote its own query it paraphrased
       "Hải Phòng" away from "các tỉnh khác" and recall dropped. Also saves one LLM round trip.
     - lookup_order when the message is clearly about an order: the model sometimes told unverified
       customers to "tap the share-phone button" without calling the tool, so action=request_phone
-      was never set and the button never appeared."""
+      was never set and the button never appeared.
+    Both are read-only, so the pipeline runs this in parallel with the injection/triage check."""
+    messages: list[dict] = []
     await _inject("search_kb", {"query": question[:300]}, ctx, messages)
     order_args = order_intent(question)
     if order_args is not None:
         await _inject("lookup_order", order_args, ctx, messages)
+    return messages
 
 
 REWRITE = (
@@ -146,19 +149,26 @@ async def _ground(out: AgentOut, messages: list[dict], ctx: AgentContext, histor
                     grounding="refused")
 
 
-async def run(question: str, ctx: AgentContext, history: list[dict] | None = None) -> AgentOut:
+async def run(
+    question: str,
+    ctx: AgentContext,
+    history: list[dict] | None = None,
+    prepared: list[dict] | None = None,
+    model: str | None = None,
+) -> AgentOut:
     settings = get_settings()
     messages: list[dict] = [
         {"role": "system", "content": agent_prompt(ctx.channel, tools.now(), phone_verified=bool(ctx.phone))},
         *(history or []),
         {"role": "user", "content": question},
     ]
-    if settings.auto_retrieve:
-        await _prefetch(question, ctx, messages)
+    if prepared is None and settings.auto_retrieve:
+        prepared = await prepare(question, ctx)
+    messages += prepared or []
 
-    model = settings.llm_model_small
+    model = model or settings.llm_model_small
     for step in range(1, settings.agent_max_steps + 1):
-        r = await llm.complete(messages, tools=tools.TOOL_SPECS, json_mode=True, temperature=0.2)
+        r = await llm.complete(messages, model, tools=tools.TOOL_SPECS, json_mode=True, temperature=0.2)
         ctx.usage.add_result(r)
         model = r.model
         if not r.tool_calls:

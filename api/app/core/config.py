@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     grounding_mode: Literal["off", "risk", "always"] = "risk"
     grounding_skip_score: float = 10.0
     guard_output: bool = True
+    # Cost / latency
+    router_enabled: bool = True  # "complex" turns (from the triage call) use llm_model_large
+    semantic_cache: bool = True
+    semcache_collection: str = "semcache"
+    # Candidate threshold only; every candidate is confirmed by an LLM verifier (semcache_verify).
+    # Chosen by evals/run_cache_threshold.py: no cosine threshold alone was safe, see README.
+    semcache_threshold: float = 0.60
+    semcache_verify: bool = True
+    semcache_ttl_s: int = 86400
+    daily_budget_usd: float = 1.0
+
     rate_limit_per_minute: int = 15
     rate_limit_per_day: int = 300
     history_messages: int = 10

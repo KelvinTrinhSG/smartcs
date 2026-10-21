@@ -122,6 +122,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     settings = get_settings()
+    settings.semcache_collection = "semcache_eval"  # keep evals out of the production cache
     for flag in GUARD_FLAGS:
         setattr(settings, flag, args.guards == "on")
     if args.guards == "off":

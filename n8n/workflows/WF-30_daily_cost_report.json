@@ -1,0 +1,152 @@
+{
+  "id": "wf30dailycostreport",
+  "name": "WF-30 Daily Cost Report",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "4ef4dc01-3742-44c2-b15b-b3f9ed0483e8",
+      "name": "Every day 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SMARTCS_API_URL }}/v1/metrics/cost?day={{ $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "6a34ffe1-abc2-4b85-96af-144b4a519fb1",
+      "name": "Get Yesterday Cost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.STAFF_TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ab9592f7-463a-44f9-b931-2e887cd8a31b",
+      "name": "Send Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ],
+      "webhookId": "4aa1ba89-5e13-4c73-826f-8652c502786e",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "b01f8d44-2b28-4252-98a5-9678a3a27c8e",
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatting lives in a Code node: inside n8n expressions the sequence \"$'\" (a dollar sign before a quote)\n// breaks the expression parser, and cost reports are full of dollar amounts.\nconst m = $input.first().json;\nconst usd = (x) => 'US$' + Number(x).toFixed(4);\nconst share = m.tokens_in ? Math.round((100 * m.cached_tokens) / m.tokens_in) : 0;\nconst routes = Object.keys(m.routes || {}).map((k) => k + ' ' + m.routes[k]).join(', ') || 'không có';\nconst text = [\n  '📊 Báo cáo SmartCS ngày ' + m.date,\n  'Lượt chat: ' + m.turns + ' (' + m.sessions + ' phiên)',\n  'Chi phí LLM: ' + usd(m.cost_usd) + ' (≈ ' + usd(m.cost_per_1k_turns_usd) + ' / 1.000 lượt)',\n  'Semantic cache: ' + (100 * m.cache_hit_rate).toFixed(1) + '% lượt · prompt cache: ' + share + '% token vào',\n  'Độ trễ p50 / p95: ' + (m.latency_p50_ms / 1000).toFixed(1) + 's / ' + (m.latency_p95_ms / 1000).toFixed(1) + 's',\n  'Phân luồng: ' + routes,\n  'Ngân sách ngày: ' + usd(m.daily_budget_usd) + (m.over_budget ? ' ⚠️ VƯỢT' : ' ✅'),\n].join('\\n');\nreturn [{ json: { text } }];"
+      },
+      "id": "9d0378bf-9aef-400e-96e4-011d58e80ebd",
+      "name": "Format Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Every day 08:00": {
+      "main": [
+        [
+          {
+            "node": "Get Yesterday Cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Yesterday Cost": {
+      "main": [
+        [
+          {
+            "node": "Format Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "Get Yesterday Cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "wf99errorhandler",
+    "timezone": "Asia/Ho_Chi_Minh"
+  },
+  "pinData": {}
+}

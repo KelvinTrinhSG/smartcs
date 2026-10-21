@@ -17,6 +17,7 @@ from collections import Counter
 from app.agent import pipeline
 from app.agent.prompts import system_prompt
 from app.agent.tools import AgentContext
+from app.cache import semantic
 from app.core.config import get_settings
 from app.llm import client as llm
 from app.llm.cost import Usage
@@ -189,6 +190,10 @@ async def main() -> None:
     parser.add_argument("--concurrency", type=int, default=5)
     parser.add_argument("--tag", default="", help="suffix for the report file name")
     args = parser.parse_args()
+
+    # Never read from or write into the production semantic cache during an eval.
+    get_settings().semcache_collection = "semcache_eval"
+    await semantic.clear()
 
     items = load_golden()
     sem = asyncio.Semaphore(args.concurrency)

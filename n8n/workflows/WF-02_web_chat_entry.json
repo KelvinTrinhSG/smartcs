@@ -14,7 +14,10 @@
       "name": "Web Chat Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "webhookId": "5b0f3e5e-02a1-4d8e-9c55-7a1e0c0b0201"
     },
     {
@@ -24,19 +27,27 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-Internal-Key", "value": "={{ $env.SMARTCS_INTERNAL_KEY }}" }
+            {
+              "name": "X-Internal-Key",
+              "value": "={{ $env.SMARTCS_INTERNAL_KEY }}"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ session_id: 'web_' + ($json.body.session_id || 'anon'), channel: 'web', user: { id: 'web_' + ($json.body.session_id || 'anon') }, message: $json.body.message }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "a1f0c6b2-0001-4c1e-9a10-000000000002",
       "name": "Call SmartCS API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
     },
     {
       "parameters": {
@@ -48,13 +59,39 @@
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [480, 0]
+      "position": [
+        480,
+        0
+      ]
     }
   ],
   "connections": {
-    "Web Chat Webhook": { "main": [[{ "node": "Call SmartCS API", "type": "main", "index": 0 }]] },
-    "Call SmartCS API": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+    "Web Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call SmartCS API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call SmartCS API": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "wf99errorhandler"
+  },
   "pinData": {}
 }

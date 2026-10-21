@@ -1,0 +1,60 @@
+{
+  "id": "wf99errorhandler",
+  "name": "WF-99 Error Handler",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "936fa243-6a10-46b5-a48a-cf40e0c38480",
+      "name": "On workflow error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.STAFF_TELEGRAM_CHAT_ID }}",
+        "text": "={{ '⚠️ Workflow lỗi: ' + $json.workflow.name + '\nNode: ' + ($json.execution.lastNodeExecuted || '?') + '\nLỗi: ' + (($json.execution.error && $json.execution.error.message) || 'không rõ').slice(0, 300) + '\nExecution: ' + ($json.execution.id || '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8ebc5770-afab-47e6-b7de-5d3c52dc9acc",
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        0
+      ],
+      "webhookId": "9d4deca9-16f9-43dc-80c0-3c983e057bc1",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On workflow error": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh"
+  },
+  "pinData": {}
+}
