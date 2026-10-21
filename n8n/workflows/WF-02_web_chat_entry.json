@@ -1,0 +1,60 @@
+{
+  "id": "wf02webchatentry",
+  "name": "WF-02 Web Chat Entry",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat/web",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1f0c6b2-0001-4c1e-9a10-000000000001",
+      "name": "Web Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "5b0f3e5e-02a1-4d8e-9c55-7a1e0c0b0201"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMARTCS_API_URL }}/v1/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Key", "value": "={{ $env.SMARTCS_INTERNAL_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session_id: 'web_' + ($json.body.session_id || 'anon'), channel: 'web', user: { id: 'web_' + ($json.body.session_id || 'anon') }, message: $json.body.message }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1f0c6b2-0001-4c1e-9a10-000000000002",
+      "name": "Call SmartCS API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ answer: $json.answer, citations: $json.citations, action: $json.action }) }}",
+        "options": {}
+      },
+      "id": "a1f0c6b2-0001-4c1e-9a10-000000000003",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Web Chat Webhook": { "main": [[{ "node": "Call SmartCS API", "type": "main", "index": 0 }]] },
+    "Call SmartCS API": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
