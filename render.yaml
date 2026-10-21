@@ -1,0 +1,135 @@
+# Render Blueprint: API + n8n + Postgres + Key Value (Redis). Qdrant runs on Qdrant Cloud (free tier).
+# Secrets marked "sync: false" are entered in the Render dashboard on first deploy, never committed.
+# Deploys wait for GitHub CI to pass (autoDeployTrigger: checksPass).
+
+envVarGroups:
+  - name: smartcs-shared
+    envVars:
+      - key: INTERNAL_API_KEY  # n8n <-> api
+        generateValue: true
+
+databases:
+  - name: smartcs-db
+    plan: basic-256mb
+    region: singapore
+    postgresMajorVersion: "17"
+    databaseName: smartcs
+    user: smartcs
+
+services:
+  - type: keyvalue
+    name: smartcs-redis
+    plan: free
+    region: singapore
+    ipAllowList: []  # private network only
+
+  - type: web
+    name: smartcs-api
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerContext: ./api
+    dockerfilePath: ./api/Dockerfile
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: ["api/**"]
+      ignoredPaths: ["api/tests/**", "api/evals/**"]
+    envVars:
+      - fromGroup: smartcs-shared
+      - key: PORT
+        value: "8000"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartcs-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: smartcs-redis
+          property: connectionString
+      - key: N8N_BASE_URL
+        fromService:
+          type: web
+          name: smartcs-n8n
+          property: hostport
+
+  - type: web
+    name: smartcs-n8n
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerContext: ./n8n
+    dockerfilePath: ./n8n/Dockerfile
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: ["n8n/**"]
+    envVars:
+      - fromGroup: smartcs-shared
+      - key: PORT
+        value: "5678"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: STAFF_TELEGRAM_CHAT_ID
+        sync: false
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: SMARTCS_API_URL
+        fromService:
+          type: web
+          name: smartcs-api
+          property: hostport
+      # n8n's own database (created by data/seed/01_init.sql) on the same Postgres instance
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_DATABASE
+        value: n8n
+      - key: DB_POSTGRESDB_HOST
+        fromDatabase: {name: smartcs-db, property: host}
+      - key: DB_POSTGRESDB_PORT
+        fromDatabase: {name: smartcs-db, property: port}
+      - key: DB_POSTGRESDB_USER
+        fromDatabase: {name: smartcs-db, property: user}
+      - key: DB_POSTGRESDB_PASSWORD
+        fromDatabase: {name: smartcs-db, property: password}
+      # Business database, used to build the "SmartCS DB" Postgres credential
+      - key: APP_DB_HOST
+        fromDatabase: {name: smartcs-db, property: host}
+      - key: APP_DB_PORT
+        fromDatabase: {name: smartcs-db, property: port}
+      - key: APP_DB_NAME
+        fromDatabase: {name: smartcs-db, property: database}
+      - key: APP_DB_USER
+        fromDatabase: {name: smartcs-db, property: user}
+      - key: APP_DB_PASSWORD
+        fromDatabase: {name: smartcs-db, property: password}
+      - key: GENERIC_TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: TZ
+        value: Asia/Ho_Chi_Minh
+      - key: N8N_BLOCK_ENV_ACCESS_IN_NODE
+        value: "false"
+      - key: N8N_RUNNERS_ENABLED
+        value: "true"
+      - key: N8N_PROXY_HOPS
+        value: "1"
+      - key: N8N_DIAGNOSTICS_ENABLED
+        value: "false"
+      - key: N8N_VERSION_NOTIFICATIONS_ENABLED
+        value: "false"
+      # Starter has 512 MB; n8n used ~800 MB locally with no limit. Upgrade the plan if it gets OOM-killed.
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=320
+      - key: EXECUTIONS_DATA_PRUNE
+        value: "true"
+      - key: EXECUTIONS_DATA_MAX_AGE
+        value: "168"

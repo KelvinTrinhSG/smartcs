@@ -348,6 +348,34 @@ If an antivirus/proxy inspects HTTPS (e.g. Kaspersky), put its root CA at `certs
 On Telegram, order questions show a **📱 Chia sẻ số điện thoại** button; sharing your own contact verifies the
 phone. Staff answer escalations with `/reply <chat_id> <message>` from the staff chat.
 
+## Deploy (Render)
+
+[render.yaml](render.yaml) is a Render Blueprint: `smartcs-api` and `smartcs-n8n` (Docker web services),
+Postgres and Key Value (Redis), all in Singapore. Qdrant runs on Qdrant Cloud's free tier. Render gives both
+services a fixed HTTPS URL, so no tunnel or domain is needed. Deploys start only after GitHub CI passes.
+
+The n8n image ([n8n/Dockerfile](n8n/Dockerfile)) bakes in `n8n/workflows/`. On every start,
+[n8n/render-start.sh](n8n/render-start.sh) builds the four credentials from env vars, imports credentials and
+workflows, and publishes them. Git is the source of truth: edits made in the hosted editor are overwritten on
+the next deploy.
+
+1. Create a free cluster on [Qdrant Cloud](https://cloud.qdrant.io) and note its URL and API key.
+2. Render → **New → Blueprint** → pick this repo. Fill in the `sync: false` secrets: `OPENAI_API_KEY` (both
+   services), `QDRANT_URL`, `QDRANT_API_KEY`, `TELEGRAM_BOT_TOKEN`, `STAFF_TELEGRAM_CHAT_ID`.
+3. Once Postgres is up, load the schema and mock data with its **External Database URL**. This also creates
+   the `n8n` database, so redeploy `smartcs-n8n` afterwards if it failed on the first try:
+   ```bash
+   for f in data/seed/*.sql; do docker run --rm -i postgres:17-alpine psql "$EXTERNAL_URL?sslmode=require" < "$f"; done
+   ```
+4. Ingest the knowledge base into Qdrant Cloud from your machine:
+   ```bash
+   docker compose run --rm -e QDRANT_URL=<url> -e QDRANT_API_KEY=<key> api python -m app.rag.cli ingest /data/docs
+   ```
+5. Open the n8n URL right away and create the owner account: the editor is public.
+
+WF-01 registers the Telegram webhook with the Render URL when it is published. A local stack using the same
+bot token would take the webhook back, so use a second bot for local development.
+
 ## Tests
 
 ```bash
@@ -366,6 +394,8 @@ api/app/rag/      chunking, sparse vectors, Qdrant store, hybrid retriever, rera
 api/tests/        unit tests + integration tests with n8n mocked via respx
 api/evals/        golden set, eval runners, reports
 n8n/workflows/    exported n8n workflows (no credentials)
+n8n/Dockerfile    n8n image for Render (workflows baked in, credentials from env)
+render.yaml       Render Blueprint
 data/docs/        mock policy documents (knowledge base)
 data/seed/        SQL schema + mock products/orders
 .github/workflows CI: ruff, pytest, workflow validation, gitleaks

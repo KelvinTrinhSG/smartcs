@@ -97,7 +97,8 @@ def _hit(p: models.ScoredPoint) -> Hit:
 
 @lru_cache
 def _client() -> AsyncQdrantClient:
-    return AsyncQdrantClient(url=get_settings().qdrant_url)
+    settings = get_settings()
+    return AsyncQdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None)
 
 
 def get_store(strategy: str | None = None) -> KBStore:

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -58,9 +59,16 @@ class Settings(BaseSettings):
     database_url: str = ""
     redis_url: str = ""
     qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str = ""  # Qdrant Cloud; empty for the local container
 
-    # n8n tool webhooks
+    # n8n tool webhooks. Render's private-network reference gives "host:port" without a scheme.
     n8n_base_url: str = "http://n8n:5678"
+
+    @field_validator("n8n_base_url")
+    @classmethod
+    def _add_scheme(cls, v: str) -> str:
+        return v if "://" in v else f"http://{v}"
+
     n8n_timeout_s: float = 10.0
     n8n_retries: int = 2
     n8n_backoff_s: float = 0.5
