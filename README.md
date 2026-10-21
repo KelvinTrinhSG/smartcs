@@ -14,8 +14,8 @@ off to a human. It works over Telegram (text and voice) and a web chat webhook.
 
 Hosted on Render (see [Deploy](#deploy-render)).
 
-- **Web chat page:** [docs/index.html](docs/index.html), a single static page that calls the WF-02 webhook.
-  Open it locally or host it with GitHub Pages (`main` branch, `/docs` folder).
+- **Web chat:** **<https://kelvintrinhsg.github.io/smartcs/>**. [docs/index.html](docs/index.html) is a single
+  static page on GitHub Pages (`main` branch, `/docs` folder) that calls the WF-02 webhook.
 - **Telegram:** [@techzone_smartcs_bot](https://t.me/techzone_smartcs_bot). Text or a voice message both work.
 - **Web chat webhook:**
   ```bash
