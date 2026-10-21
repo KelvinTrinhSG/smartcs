@@ -8,11 +8,19 @@ DOCS = {d.doc_id: d for d in load_dir(Path(__file__).resolve().parents[3] / "dat
 
 def test_golden_set_evidence_exists_in_docs():
     for item in load_golden():
-        if item["type"] == "out_of_scope":
+        if item["type"] in ("out_of_scope", "action"):
             assert item["expected_doc"] is None
             continue
         doc = DOCS[item["expected_doc"]]
         assert _norm(item["evidence"]) in _norm(doc.text), item["id"]
+
+
+def test_action_items_name_a_real_tool():
+    from app.agent.tools import TOOLS
+
+    for item in load_golden():
+        if item["type"] == "action":
+            assert item["expected_tool"] in TOOLS, item["id"]
 
 
 def test_golden_set_ids_unique():

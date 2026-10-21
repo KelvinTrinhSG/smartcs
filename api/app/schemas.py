@@ -1,11 +1,13 @@
+import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, model_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+
+Action = Literal["none", "handoff", "ticket_created", "appointment_booked", "request_phone"]
 
 
 class ChatUser(BaseModel):
-    id: str
-    phone_verified: str | None = None
+    id: str = Field(min_length=1, max_length=64)
 
 
 class ChatRequest(BaseModel):
@@ -30,13 +32,37 @@ class ChatMeta(BaseModel):
     cost_usd: float = 0.0
     latency_ms: int = 0
     chunks_used: int = 0
+    steps: int = 0
+    tools: list[str] = []
 
 
 class ChatResponse(BaseModel):
     answer: str
     citations: list[Citation] = []
-    action: Literal["none", "handoff", "ticket_created"] = "none"
+    action: Action = "none"
     meta: ChatMeta
+
+
+class VerifyRequest(BaseModel):
+    """Sent by n8n only when a Telegram contact was shared by its owner (contact.user_id == from.id)."""
+
+    user_id: str = Field(pattern=r"^tg_\d+$")
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def _vn_mobile(cls, v: str) -> str:
+        digits = re.sub(r"\D", "", v)
+        if digits.startswith("84"):
+            digits = "0" + digits[2:]
+        if not re.fullmatch(r"0\d{9}", digits):
+            raise ValueError("not a Vietnamese mobile number")
+        return digits
+
+
+class VerifyResponse(BaseModel):
+    verified: bool
+    phone_masked: str
 
 
 class IngestRequest(BaseModel):

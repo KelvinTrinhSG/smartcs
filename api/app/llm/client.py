@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import litellm
 
@@ -15,6 +15,18 @@ class LLMResult:
     tokens_in: int
     tokens_out: int
     cost_usd: float
+    tool_calls: list[dict] = field(default_factory=list)  # [{"id", "name", "arguments"}]
+
+    def assistant_message(self) -> dict:
+        """The assistant turn to append to the conversation before sending tool results back."""
+        msg: dict = {"role": "assistant", "content": self.text or None}
+        if self.tool_calls:
+            msg["tool_calls"] = [
+                {"id": tc["id"], "type": "function",
+                 "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                for tc in self.tool_calls
+            ]
+        return msg
 
 
 def _cost(resp) -> float:
@@ -28,6 +40,7 @@ async def complete(
     messages: list[dict],
     model: str | None = None,
     *,
+    tools: list[dict] | None = None,
     json_mode: bool = False,
     temperature: float | None = None,
     max_tokens: int | None = None,
@@ -35,6 +48,8 @@ async def complete(
     settings = get_settings()
     model = model or settings.llm_model_small
     kwargs = {}
+    if tools:
+        kwargs["tools"] = tools
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
     if temperature is not None:
@@ -49,12 +64,18 @@ async def complete(
         **kwargs,
     )
     usage = resp.usage
+    message = resp.choices[0].message
+    tool_calls = [
+        {"id": tc.id, "name": tc.function.name, "arguments": tc.function.arguments or "{}"}
+        for tc in (getattr(message, "tool_calls", None) or [])
+    ]
     return LLMResult(
-        text=resp.choices[0].message.content or "",
+        text=message.content or "",
         model=model,
         tokens_in=usage.prompt_tokens,
         tokens_out=usage.completion_tokens,
         cost_usd=_cost(resp),
+        tool_calls=tool_calls,
     )
 
 

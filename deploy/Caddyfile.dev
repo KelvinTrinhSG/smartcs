@@ -1,6 +1,11 @@
-# Dev tunnel gateway: only n8n production webhooks are reachable from the internet.
-# The n8n editor stays on http://localhost:5678.
+# Dev tunnel gateway: only public channel webhooks are reachable from the internet.
+# The n8n editor stays on http://localhost:5679, and internal tool webhooks
+# (/webhook/tool/*, called by the API over the Docker network) are never exposed.
 :80 {
+	@internal path /webhook/tool/*
+	handle @internal {
+		respond "Not found" 404
+	}
 	@webhooks path /webhook/*
 	handle @webhooks {
 		reverse_proxy n8n:5678

@@ -1,0 +1,179 @@
+{
+  "id": "wf11toolbookappt",
+  "name": "WF-11 Tool: book_appointment",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool/book-appointment",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c3a11000-0000-4000-8000-000000000001",
+      "name": "Appointment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "7d2b5e70-11a1-4f00-9b77-9c3e2e2e1101",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hdrinternal01",
+          "name": "SmartCS Internal Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ins AS (\n  INSERT INTO appointments (idempotency_key, session_id, customer_phone, store_id, start_at, purpose)\n  VALUES ($1, $2, NULLIF($3, ''), $4, $5::timestamptz, $6)\n  ON CONFLICT DO NOTHING\n  RETURNING event_id, true AS created, 'booked' AS result\n)\nSELECT * FROM ins\nUNION ALL\nSELECT event_id, false, CASE WHEN idempotency_key = $1 THEN 'booked' ELSE 'slot_taken' END\nFROM appointments\nWHERE (idempotency_key = $1 OR (store_id = $4 AND start_at = $5::timestamptz))\n  AND NOT EXISTS (SELECT 1 FROM ins)\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$json.body.idempotency_key, $json.body.session_id, $json.body.customer_phone || '', $json.body.store_id, $json.body.start_time, $json.body.purpose] }}"
+        }
+      },
+      "id": "c3a11000-0000-4000-8000-000000000002",
+      "name": "Book Slot",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgsmartcs01",
+          "name": "SmartCS DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c3a11000-0000-4000-8000-0000000000c1",
+              "leftValue": "={{ $('Book Slot').item.json.created }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3a11000-0000-4000-8000-000000000003",
+      "name": "New booking?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.STAFF_TELEGRAM_CHAT_ID }}",
+        "text": "={{ (() => { const b = $('Appointment Webhook').item.json.body; const a = $('Book Slot').item.json; return '📅 Lịch hẹn mới: ' + a.event_id + '\\nCửa hàng: ' + b.store_id + '\\nThời gian: ' + DateTime.fromISO(b.start_time).setZone('Asia/Ho_Chi_Minh').toFormat('HH:mm dd/LL/yyyy') + '\\nKhách: ' + b.session_id + (b.customer_phone ? ' · ' + b.customer_phone : '') + '\\nMục đích: ' + b.purpose; })() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c3a11000-0000-4000-8000-000000000004",
+      "name": "Notify Staff",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        -100
+      ],
+      "webhookId": "7d2b5e70-11a1-4f00-9b77-9c3e2e2e1102",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ event_id: $('Book Slot').item.json.event_id, result: $('Book Slot').item.json.result }) }}",
+        "options": {}
+      },
+      "id": "c3a11000-0000-4000-8000-000000000005",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Appointment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Book Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Slot": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond": {
+      "main": [
+        [
+          {
+            "node": "New booking?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New booking?": {
+      "main": [
+        [
+          {
+            "node": "Notify Staff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

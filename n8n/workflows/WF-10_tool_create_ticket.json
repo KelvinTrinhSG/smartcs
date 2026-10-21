@@ -1,0 +1,179 @@
+{
+  "id": "wf10toolcreateticket",
+  "name": "WF-10 Tool: create_ticket",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool/create-ticket",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c3a10000-0000-4000-8000-000000000001",
+      "name": "Ticket Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "7d2b5e70-10a1-4f00-9b77-9c3e2e2e1001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hdrinternal01",
+          "name": "SmartCS Internal Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ins AS (\n  INSERT INTO tickets (idempotency_key, session_id, customer_phone, order_id, category, summary)\n  VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5, $6)\n  ON CONFLICT (idempotency_key) DO NOTHING\n  RETURNING ticket_id, status, true AS created\n)\nSELECT * FROM ins\nUNION ALL\nSELECT ticket_id, status, false FROM tickets\nWHERE idempotency_key = $1 AND NOT EXISTS (SELECT 1 FROM ins);",
+        "options": {
+          "queryReplacement": "={{ [$json.body.idempotency_key, $json.body.session_id, $json.body.customer_phone || '', $json.body.order_id || '', $json.body.category, $json.body.summary] }}"
+        }
+      },
+      "id": "c3a10000-0000-4000-8000-000000000002",
+      "name": "Insert Ticket",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "pgsmartcs01",
+          "name": "SmartCS DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c3a10000-0000-4000-8000-0000000000c1",
+              "leftValue": "={{ $('Insert Ticket').item.json.created }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3a10000-0000-4000-8000-000000000003",
+      "name": "New ticket?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.STAFF_TELEGRAM_CHAT_ID }}",
+        "text": "={{ (() => { const b = $('Ticket Webhook').item.json.body; const t = $('Insert Ticket').item.json; const chat = b.session_id.startsWith('tg_') ? b.session_id.slice(3) : ''; return '🎫 Phiếu hỗ trợ mới: ' + t.ticket_id + '\\nLoại: ' + b.category + '\\nKhách: ' + b.session_id + (b.customer_phone ? ' · ' + b.customer_phone : ' · chưa xác minh SĐT') + (b.order_id ? '\\nĐơn hàng: ' + b.order_id : '') + '\\n\\n' + b.summary + (chat ? '\\n\\nTrả lời khách: /reply ' + chat + ' <nội dung>' : ''); })() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c3a10000-0000-4000-8000-000000000004",
+      "name": "Notify Staff",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        -100
+      ],
+      "webhookId": "7d2b5e70-10a1-4f00-9b77-9c3e2e2e1002",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "telegramApi": {
+          "id": "tgcredsmartcs01",
+          "name": "TechZone SmartCS Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ticket_id: $('Insert Ticket').item.json.ticket_id, status: $('Insert Ticket').item.json.status, created: $('Insert Ticket').item.json.created }) }}",
+        "options": {}
+      },
+      "id": "c3a10000-0000-4000-8000-000000000005",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Ticket Webhook": {
+      "main": [
+        [
+          {
+            "node": "Insert Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Ticket": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond": {
+      "main": [
+        [
+          {
+            "node": "New ticket?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New ticket?": {
+      "main": [
+        [
+          {
+            "node": "Notify Staff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

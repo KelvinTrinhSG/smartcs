@@ -1,20 +1,51 @@
 import logging
 import time
+import uuid
+from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 
-from app.agent import answer
+from app.agent import loop
+from app.agent.tools import AgentContext
 from app.core.auth import require_internal_key
-from app.llm.cost import Usage
-from app.rag import ingest, loader, retriever
-from app.schemas import ChatMeta, ChatRequest, ChatResponse, IngestRequest, IngestResponse
+from app.core.config import get_settings
+from app.db.repo import Repo
+from app.rag import ingest, loader
+from app.schemas import (
+    ChatMeta,
+    ChatRequest,
+    ChatResponse,
+    IngestRequest,
+    IngestResponse,
+    VerifyRequest,
+    VerifyResponse,
+)
 
 logger = logging.getLogger("smartcs")
 
 MAX_INGEST_BYTES = 10 * 1024 * 1024
 
-app = FastAPI(title="SmartCS API", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = get_settings()
+    app.state.repo = None
+    if settings.database_url:
+        try:
+            app.state.repo = await Repo.connect(settings.database_url)
+        except Exception:  # noqa: BLE001 - run without memory/orders rather than not at all
+            logger.exception("database unavailable; history and order lookup disabled")
+    yield
+    if app.state.repo:
+        await app.state.repo.close()
+
+
+app = FastAPI(title="SmartCS API", version="0.3.0", lifespan=lifespan)
+
+
+def get_repo(request: Request) -> Repo | None:
+    return getattr(request.app.state, "repo", None)
 
 
 @app.get("/healthz")
@@ -23,35 +54,59 @@ def healthz() -> dict:
 
 
 @app.post("/v1/chat", response_model=ChatResponse, dependencies=[Depends(require_internal_key)])
-async def chat(req: ChatRequest) -> ChatResponse:
+async def chat(req: ChatRequest, repo: Repo | None = Depends(get_repo)) -> ChatResponse:
     started = time.perf_counter()
-    usage = Usage()
+    settings = get_settings()
+    ctx = AgentContext(
+        session_id=req.session_id, channel=req.channel, user_id=req.user.id,
+        turn_id=uuid.uuid4().hex[:12], repo=repo,
+    )
+    history: list[dict] = []
+    if repo:
+        try:
+            ctx.phone = await repo.get_verified_phone(req.user.id)
+            history = await repo.load_history(req.session_id, settings.history_messages)
+        except Exception:  # noqa: BLE001
+            logger.exception("could not load session state session=%s", req.session_id)
 
     try:
-        context = await retriever.retrieve(req.message, usage=usage)
-    except Exception:  # noqa: BLE001 - degrade to "no context" instead of failing the chat
-        logger.exception("retrieval failed session=%s", req.session_id)
-        context = []
-
-    try:
-        out = await answer.generate(req.message, req.channel, context, usage)
+        out = await loop.run(req.message, ctx, history)
     except Exception as err:  # noqa: BLE001
-        logger.exception("llm call failed session=%s", req.session_id)
+        logger.exception("agent failed session=%s", req.session_id)
         raise HTTPException(status_code=502, detail="llm unavailable") from err
+
+    latency_ms = int((time.perf_counter() - started) * 1000)
+    if repo:
+        try:
+            await repo.save_turn(req.session_id, req.message, out.answer)
+            await repo.log_usage(req.session_id, req.channel, out.model, ctx.usage.tokens_in,
+                                 ctx.usage.tokens_out, ctx.usage.cost_usd, latency_ms)
+        except Exception:  # noqa: BLE001
+            logger.exception("could not persist turn session=%s", req.session_id)
 
     return ChatResponse(
         answer=out.answer,
         citations=out.citations,
-        action="handoff" if out.needs_handoff else "none",
+        action=out.action,
         meta=ChatMeta(
             model=out.model,
-            tokens_in=usage.tokens_in,
-            tokens_out=usage.tokens_out,
-            cost_usd=round(usage.cost_usd, 6),
-            latency_ms=int((time.perf_counter() - started) * 1000),
-            chunks_used=len(context),
+            tokens_in=ctx.usage.tokens_in,
+            tokens_out=ctx.usage.tokens_out,
+            cost_usd=round(ctx.usage.cost_usd, 6),
+            latency_ms=latency_ms,
+            chunks_used=len(ctx.retrieved),
+            steps=out.steps,
+            tools=[t["tool"] for t in ctx.tool_log],
         ),
     )
+
+
+@app.post("/v1/verify", response_model=VerifyResponse, dependencies=[Depends(require_internal_key)])
+async def verify(req: VerifyRequest, repo: Repo | None = Depends(get_repo)) -> VerifyResponse:
+    if repo is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    await repo.set_verified_phone(req.user_id, req.phone)
+    return VerifyResponse(verified=True, phone_masked=req.phone[:2] + "*" * 6 + req.phone[-2:])
 
 
 @app.post("/v1/ingest", response_model=IngestResponse, dependencies=[Depends(require_internal_key)])

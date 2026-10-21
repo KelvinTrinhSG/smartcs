@@ -24,12 +24,22 @@ class Settings(BaseSettings):
     min_rerank_score: float = 5.0
     min_dense_score: float = 0.3
 
+    # Agent
+    agent_max_steps: int = 5
+    auto_retrieve: bool = True
+    history_messages: int = 10
+
     internal_api_key: str = ""
 
     database_url: str = ""
     redis_url: str = ""
     qdrant_url: str = "http://localhost:6333"
-    n8n_base_url: str = ""
+
+    # n8n tool webhooks
+    n8n_base_url: str = "http://n8n:5678"
+    n8n_timeout_s: float = 10.0
+    n8n_retries: int = 2
+    n8n_backoff_s: float = 0.5
 
 
 @lru_cache
