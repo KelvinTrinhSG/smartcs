@@ -35,10 +35,26 @@ Import n8n workflows and call the web chat entry:
 
 ```bash
 docker compose exec n8n n8n import:workflow --separate --input=/workflows
-# then open http://localhost:5678, activate "WF-02 Web Chat Entry"
-curl -X POST http://localhost:5678/webhook/chat/web \
+# then open http://localhost:5679 (host port 5679, so a local n8n on 5678 can coexist)
+# and activate "WF-02 Web Chat Entry"
+curl -X POST http://localhost:5679/webhook/chat/web \
   -H "Content-Type: application/json" -d '{"session_id":"abc","message":"Xin chào"}'
 ```
+
+### Telegram (WF-01)
+
+Telegram needs a public HTTPS webhook. In dev, a Cloudflare Quick Tunnel runs behind a small Caddy
+gateway ([deploy/Caddyfile.dev](deploy/Caddyfile.dev)) that only exposes `/webhook/*`, never the n8n editor.
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and set `TELEGRAM_BOT_TOKEN` in `.env`.
+2. In n8n, create a *Telegram API* credential named `TechZone SmartCS Bot`, then import and activate WF-01.
+3. Start the tunnel and register the webhook (re-run whenever the tunnel restarts, the URL changes):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\tunnel_url.ps1
+```
+
+If an antivirus/proxy inspects HTTPS (e.g. Kaspersky), put its root CA at `certs/extra-ca.pem`.
 
 ## Tests
 

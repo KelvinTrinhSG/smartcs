@@ -1,0 +1,11 @@
+# Dev tunnel gateway: only n8n production webhooks are reachable from the internet.
+# The n8n editor stays on http://localhost:5678.
+:80 {
+	@webhooks path /webhook/*
+	handle @webhooks {
+		reverse_proxy n8n:5678
+	}
+	handle {
+		respond "Not found" 404
+	}
+}

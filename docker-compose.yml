@@ -64,14 +64,41 @@ services:
       SMARTCS_INTERNAL_KEY: ${INTERNAL_API_KEY}
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
       N8N_RUNNERS_ENABLED: "true"
+      N8N_PROXY_HOPS: "1"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      # Optional: trust a TLS-inspecting proxy/antivirus root CA (put it at certs/extra-ca.pem).
+      NODE_EXTRA_CA_CERTS: /certs/extra-ca.pem
     ports:
-      - "127.0.0.1:5678:5678"
+      # Host port 5679 so it can run alongside a locally installed n8n on 5678.
+      - "127.0.0.1:5679:5678"
     volumes:
       - n8ndata:/home/node/.n8n
       - ./n8n/workflows:/workflows:ro
+      - ./certs:/certs:ro
     depends_on:
       postgres:
         condition: service_healthy
+
+  # Dev only: public HTTPS URL for Telegram webhooks (Cloudflare Quick Tunnel, URL changes on restart).
+  # Run scripts/tunnel_url.ps1 to sync WEBHOOK_URL. Production uses Caddy + a real domain instead.
+  # The tunnel goes through webhook-gw so only /webhook/* is public, never the n8n editor.
+  webhook-gw:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    profiles: ["dev"]
+    depends_on:
+      - n8n
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://webhook-gw:80
+    profiles: ["dev"]
+    depends_on:
+      - webhook-gw
 
 volumes:
   pgdata:

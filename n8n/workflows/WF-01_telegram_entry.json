@@ -1,0 +1,131 @@
+{
+  "id": "wf01telegramentry",
+  "name": "WF-01 Telegram Entry",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0101",
+      "credentials": {
+        "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000002",
+      "name": "Has text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMARTCS_API_URL }}/v1/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Internal-Key", "value": "={{ $env.SMARTCS_INTERNAL_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session_id: 'tg_' + $json.message.chat.id, channel: 'telegram', user: { id: 'tg_' + $json.message.from.id }, message: $json.message.text }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000003",
+      "name": "Call SmartCS API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, -100],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.answer }}",
+        "additionalFields": { "appendAttribution": false }
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000004",
+      "name": "Send Answer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, -180],
+      "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0102",
+      "credentials": {
+        "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Xin lỗi, hệ thống đang bận. Bạn vui lòng thử lại sau ít phút nhé.",
+        "additionalFields": { "appendAttribution": false }
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000005",
+      "name": "Send API Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, -20],
+      "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0103",
+      "credentials": {
+        "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Hiện SmartCS chỉ hỗ trợ tin nhắn văn bản. Tin nhắn thoại sẽ sớm được hỗ trợ!",
+        "additionalFields": { "appendAttribution": false }
+      },
+      "id": "b2e1d7c3-0001-4c1e-9a10-000000000006",
+      "name": "Send Text Only",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [460, 120],
+      "webhookId": "6c1a4f6f-01b2-4e9f-8d66-8b2f1d1c0104",
+      "credentials": {
+        "telegramApi": { "id": "tgcredsmartcs01", "name": "TechZone SmartCS Bot" }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Has text?", "type": "main", "index": 0 }]] },
+    "Has text?": {
+      "main": [
+        [{ "node": "Call SmartCS API", "type": "main", "index": 0 }],
+        [{ "node": "Send Text Only", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call SmartCS API": {
+      "main": [
+        [{ "node": "Send Answer", "type": "main", "index": 0 }],
+        [{ "node": "Send API Error", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
