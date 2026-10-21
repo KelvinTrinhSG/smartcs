@@ -44,6 +44,9 @@ async def test_order_question_without_phone_requests_verification(ctx, script):
     ("kiểm tra giúp tz10003", {"order_id": "TZ10003"}),
     ("don hang cua minh giao chua", {}),
     ("Cho tôi xem mã đơn", {}),
+    ("Check my order.", {}),
+    ("What's the order status?", {}),
+    ("How do I place an order?", None),
     ("Laptop ASUS bảo hành bao lâu?", None),
     ("Thủ tục đơn giản không?", None),
 ])

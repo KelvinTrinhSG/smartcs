@@ -24,6 +24,7 @@ from app.schemas import (
     VerifyRequest,
     VerifyResponse,
 )
+from app.voice import speakable
 
 logger = logging.getLogger("smartcs")
 
@@ -112,7 +113,7 @@ async def chat(
             logger.exception("could not persist turn session=%s", req.session_id)
 
     return ChatResponse(
-        answer=out.answer,
+        answer=speakable(out.answer) if req.channel == "voice" else out.answer,
         citations=out.citations,
         action=out.action,
         meta=ChatMeta(

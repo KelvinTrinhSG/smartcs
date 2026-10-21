@@ -11,7 +11,7 @@ BASE = """Bạn là SmartCS, trợ lý chăm sóc khách hàng của cửa hàng
 TEXT_STYLE = "- Có thể dùng markdown đơn giản."
 VOICE_STYLE = (
     "- Câu trả lời sẽ được đọc thành giọng nói: tối đa 3 câu, không dùng markdown, "
-    "không dùng ký hiệu đặc biệt, viết số theo cách đọc tự nhiên."
+    "không dùng ký hiệu đặc biệt, viết số theo cách đọc tự nhiên, nhưng giữ nguyên mã đơn (ví dụ TZ20002)."
 )
 
 TEXT = BASE + "\n" + TEXT_STYLE

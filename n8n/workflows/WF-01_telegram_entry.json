@@ -583,7 +583,7 @@
         "binaryData": true,
         "binaryPropertyName": "data",
         "additionalFields": {
-          "caption": "={{ ('🗣 Bạn hỏi: ' + $('Transcribe').item.json.text + '\n\n' + $('Call SmartCS API (voice)').item.json.answer).slice(0, 1000) }}",
+          "caption": "={{ ('🗣 Bạn hỏi: ' + $('Transcribe').item.json.text + '\\n\\n' + $('Call SmartCS API (voice)').item.json.answer).slice(0, 1000) }}",
           "title": "SmartCS",
           "performer": "TechZone"
         }

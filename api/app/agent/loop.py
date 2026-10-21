@@ -56,7 +56,11 @@ def _final(text: str, model: str, ctx: AgentContext, steps: int) -> AgentOut:
 
 
 ORDER_ID_RE = re.compile(r"\bTZ\d{5,}\b", re.IGNORECASE)
-ORDER_INTENT_RE = re.compile(r"đơn hàng|mã đơn|đơn của|don hang|ma don", re.IGNORECASE)
+# English too: Whisper transcribes English voice messages as English ("Check my order.").
+ORDER_INTENT_RE = re.compile(
+    r"đơn hàng|mã đơn|đơn của|don hang|ma don|\bmy orders?\b|\border (?:status|number|id)\b|\btrack\w* order",
+    re.IGNORECASE,
+)
 
 
 def order_intent(question: str) -> dict | None:
