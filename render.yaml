@@ -122,7 +122,7 @@ services:
         value: "true"
       - key: N8N_PROXY_HOPS
         value: "1"
-      - key: N8N_DIAGNOSTICS_ENABLED
+      - key: N8N_DIAGNOSTICS_ENABLED  # gitleaks:allow (env var name, not a secret)
         value: "false"
       - key: N8N_VERSION_NOTIFICATIONS_ENABLED
         value: "false"
