@@ -77,7 +77,7 @@ data/seed/        SQL schema + mock products/orders
 ## Roadmap
 
 - [x] Week 1 — docker-compose, `/v1/chat`, web chat entry, mock data
-- [ ] Week 1 — Telegram entry (WF-01)
+- [x] Week 1 — Telegram entry (WF-01)
 - [ ] Week 2 — RAG: ingest, chunking, hybrid search, rerank, golden set baseline
 - [ ] Week 3 — agent loop + n8n tools (ticket, appointment, handoff)
 - [ ] Week 4 — hallucination control & security (PII, injection, grounding)
