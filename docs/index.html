@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TechZone SmartCS — Chat demo</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #fff; --ink: #1d2330; --muted: #6b7280; --line: #e5e7eb;
+    --brand: #2563eb; --brand-ink: #fff; --bot: #f1f3f6; --warn-bg: #fff7e6; --warn-ink: #8a5a00;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); display: flex; justify-content: center;
+  }
+  .app {
+    width: 100%; max-width: 760px; height: 100%; display: flex; flex-direction: column;
+    background: var(--panel); border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  }
+  header {
+    padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px;
+  }
+  .logo {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--brand); color: var(--brand-ink);
+    display: grid; place-items: center; font-weight: 700;
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  header p { margin: 0; font-size: 13px; color: var(--muted); }
+  header button {
+    margin-left: auto; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  header button:hover { background: var(--bg); }
+  #log { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; white-space: pre-wrap; word-wrap: break-word; }
+  .user { align-self: flex-end; background: var(--brand); color: var(--brand-ink); border-bottom-right-radius: 4px; }
+  .bot { align-self: flex-start; background: var(--bot); border-bottom-left-radius: 4px; }
+  .bot.error { background: #fdecec; color: #8b1c1c; }
+  .note {
+    margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-ink);
+    font-size: 13px; white-space: normal;
+  }
+  .note a { color: inherit; font-weight: 600; }
+  .cites { margin-top: 8px; font-size: 12px; color: var(--muted); white-space: normal; }
+  .cites span { display: inline-block; margin: 2px 6px 0 0; padding: 1px 8px; border: 1px solid var(--line);
+    border-radius: 999px; background: var(--panel); }
+  .typing { display: inline-flex; gap: 4px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .4;
+    animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 50% { opacity: 1; } }
+  #chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 10px; }
+  #chips button {
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px;
+    padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  #chips button:hover { border-color: var(--brand); color: var(--brand); }
+  form { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); }
+  textarea {
+    flex: 1; resize: none; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    font: inherit; max-height: 140px; outline: none;
+  }
+  textarea:focus { border-color: var(--brand); }
+  form button {
+    border: 0; background: var(--brand); color: var(--brand-ink); border-radius: 10px; padding: 0 18px;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  form button:disabled { opacity: .5; cursor: default; }
+  footer { padding: 0 18px 12px; font-size: 12px; color: var(--muted); }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">TZ</div>
+    <div>
+      <h1>TechZone SmartCS</h1>
+      <p>Trợ lý chăm sóc khách hàng AI (bản demo)</p>
+    </div>
+    <button id="reset" type="button" title="Bắt đầu cuộc trò chuyện mới">Cuộc trò chuyện mới</button>
+  </header>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div id="chips">
+    <button type="button">Laptop ASUS bảo hành bao lâu?</button>
+    <button type="button">Đổi trả laptop đã bóc seal mất phí không?</button>
+    <button type="button">Shop có nhận MoMo không?</button>
+    <button type="button">Giao hàng ra Hải Phòng mất mấy ngày?</button>
+    <button type="button">Đơn hàng của tôi đâu rồi?</button>
+  </div>
+
+  <form id="form">
+    <textarea id="input" rows="1" placeholder="Nhập câu hỏi… (Enter để gửi, Shift+Enter xuống dòng)" maxlength="4000"></textarea>
+    <button id="send" type="submit">Gửi</button>
+  </form>
+  <footer>
+    Cửa hàng TechZone là dữ liệu giả lập. Câu trả lời do AI tạo ra từ tài liệu chính sách của cửa hàng.
+    Mã nguồn: <a href="https://github.com/KelvinTrinhSG/smartcs" target="_blank" rel="noopener">GitHub</a> ·
+    Telegram: <a href="https://t.me/techzone_smartcs_bot" target="_blank" rel="noopener">@techzone_smartcs_bot</a>
+  </footer>
+</div>
+
+<script>
+// ?api=<url> overrides the endpoint, e.g. a local n8n: ?api=http://localhost:5679/webhook/chat/web
+const API = new URLSearchParams(location.search).get('api')
+  || 'https://smartcs-n8n.onrender.com/webhook/chat/web';
+const TELEGRAM = 'https://t.me/techzone_smartcs_bot';
+const NOTES = {
+  request_phone: `Tra cứu đơn hàng cần xác minh số điện thoại, việc này chỉ làm được trên Telegram: <a href="${TELEGRAM}" target="_blank" rel="noopener">mở bot</a>.`,
+  ticket_created: 'Đã tạo yêu cầu hỗ trợ, nhân viên sẽ liên hệ lại.',
+  appointment_booked: 'Đã đặt lịch hẹn tại cửa hàng.',
+  handoff: 'Đã chuyển cuộc trò chuyện cho nhân viên.',
+  rate_limited: 'Bạn gửi hơi nhanh, vui lòng đợi một chút rồi thử lại.',
+};
+
+const log = document.getElementById('log');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const send = document.getElementById('send');
+
+function newSession() {
+  const id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).slice(0, 18);
+  localStorage.setItem('smartcs_session', id);
+  return id;
+}
+let session = localStorage.getItem('smartcs_session') || newSession();
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// The text channel may use simple markdown: only **bold** is rendered, everything else stays plain text.
+function render(text) {
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
+function add(role, html, extraClass = '') {
+  const el = document.createElement('div');
+  el.className = `msg ${role} ${extraClass}`.trim();
+  el.innerHTML = html;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function greet() {
+  log.innerHTML = '';
+  add('bot', 'Xin chào! Mình là trợ lý của TechZone. Bạn có thể hỏi về bảo hành, đổi trả, giao hàng, thanh toán, thành viên hoặc đặt lịch tại cửa hàng.');
+}
+
+async function ask(message) {
+  add('user', escapeHtml(message));
+  const pending = add('bot', '<span class="typing"><i></i><i></i><i></i></span>');
+  send.disabled = true;
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: session, message }),
+      signal: AbortSignal.timeout(90000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    let html = render(data.answer || '');
+    if (NOTES[data.action]) html += `<div class="note">${NOTES[data.action]}</div>`;
+    // Refusals, blocks and the phone prompt carry incidental KB hits; sources there would look like evidence.
+    const showCites = !['request_phone', 'blocked', 'rate_limited'].includes(data.action);
+    const cites = showCites ? [...new Map((data.citations || []).map((c) => [c.doc_id, c])).values()] : [];
+    if (cites.length) {
+      html += '<div class="cites">Nguồn: ' + cites.map((c) =>
+        `<span title="${escapeHtml(c.section || '')}">${escapeHtml(c.title || c.doc_id)}</span>`).join('') + '</div>';
+    }
+    pending.innerHTML = html;
+  } catch (err) {
+    pending.classList.add('error');
+    pending.textContent = 'Xin lỗi, hệ thống đang bận hoặc mất kết nối. Bạn thử lại sau ít phút nhé.';
+    console.error(err);
+  } finally {
+    send.disabled = false;
+    log.scrollTop = log.scrollHeight;
+    input.focus();
+  }
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const message = input.value.trim();
+  if (!message || send.disabled) return;
+  input.value = '';
+  input.style.height = '';
+  ask(message);
+});
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+document.querySelectorAll('#chips button').forEach((b) =>
+  b.addEventListener('click', () => { if (!send.disabled) ask(b.textContent); }));
+document.getElementById('reset').addEventListener('click', () => { session = newSession(); greet(); input.focus(); });
+
+greet();
+</script>
+</body>
+</html>
