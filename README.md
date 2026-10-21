@@ -43,28 +43,32 @@ Golden set of 59 Vietnamese questions, answers by `gpt-4o-mini`, judged by `gpt-
 ## Architecture
 
 ```mermaid
-flowchart LR
-    U(["Customer"]) -->|"text / voice"| TG["Telegram"]
-    W(["Web client"]) -->|"POST /webhook/chat/web"| N8N
-    TG -->|webhook| N8N
+flowchart TB
+    C(["Customer"]) --> TG["Telegram<br/>text or voice"]
+    C --> WEB["Web chat"]
 
-    subgraph Render["Render (Singapore)"]
-        N8N["n8n<br/>WF-01 Telegram, WF-02 web<br/>WF-10/11/12 tools<br/>WF-30/31 reports, WF-99 errors"]
-        API["FastAPI /v1/chat<br/>guardrails, cache, router<br/>agent loop + RAG"]
-        PG[("Postgres<br/>orders, history,<br/>tickets, usage")]
-        R[("Key Value<br/>rate limits")]
+    subgraph Render["Render, Singapore"]
+        N8N["<b>n8n</b><br/>channels, voice,<br/>tools, reports"]
+        API["<b>FastAPI</b><br/>guardrails, cache,<br/>agent, RAG"]
+        PG[("Postgres")]
+        KV[("Key Value")]
     end
 
-    N8N -->|"X-Internal-Key"| API
-    API -->|"tool webhooks<br/>(header auth)"| N8N
+    TG --> N8N
+    WEB --> N8N
+    N8N <-->|"internal key"| API
     API --> PG
-    API --> R
+    API --> KV
     N8N --> PG
-    API -->|"hybrid search,<br/>semantic cache"| Q[("Qdrant Cloud")]
-    API -->|"chat, embeddings"| OAI["OpenAI"]
-    N8N -->|"Whisper, TTS"| OAI
-    N8N -->|"tickets, handoffs,<br/>cost reports"| STAFF(["Staff chat on Telegram"])
+    API --> Q[("Qdrant Cloud")]
+    API --> OAI["OpenAI"]
+    N8N --> OAI
+    N8N --> STAFF(["Staff on Telegram"])
 ```
+
+n8n calls `/v1/chat` for every message; the API calls back into n8n for side-effect tools (tickets,
+appointments, handoff). Both directions use a shared internal key. n8n also uses OpenAI for Whisper and TTS,
+and posts tickets, handoffs, cost reports and errors to the staff chat.
 
 One turn of `/v1/chat`: rate limit → PII mask → injection rules, plus one `gpt-4o-mini` call that both
 classifies attacks and routes simple/complex turns → semantic cache lookup (with an LLM verifier) → KB and order
