@@ -136,12 +136,20 @@ def _add_months(d: date, months: int) -> date:
     raise ValueError("invalid date")  # pragma: no cover
 
 
-def _format_order(o: dict) -> dict:
+def _format_order(o: dict, today: date) -> dict:
+    """Warranty status is computed here, not by the model: in a live test the LLM read
+    warranty_until=2026-08-15 on 2026-10-21 and still said the item was under warranty."""
     items = o["items"] if isinstance(o["items"], list) else json.loads(o["items"])
     delivered = o["delivered_at"].astimezone(TZ).date() if o["delivered_at"] else None
     for it in items:
         until = _add_months(delivered, it["warranty_months"]) if delivered else None
         it["warranty_until"] = until.isoformat() if until else None
+        if until is None:
+            it["warranty_status"] = "not started (order not delivered yet)"
+        elif until >= today:
+            it["warranty_status"] = f"ACTIVE, {(until - today).days} days left"
+        else:
+            it["warranty_status"] = f"EXPIRED {(today - until).days} days ago"
     return {
         "order_id": o["order_id"],
         "status": o["status"],
@@ -161,7 +169,12 @@ async def lookup_order(args: LookupOrderArgs, ctx: AgentContext) -> dict:
     if not orders:
         # Same answer whether the order does not exist or belongs to someone else.
         return {"orders": [], "note": "No matching order for this verified customer."}
-    return {"orders": [_format_order(o) for o in orders]}
+    today = now().date()
+    return {
+        "order_count": len(orders),
+        "today": today.isoformat(),
+        "orders": [_format_order(o, today) for o in orders],
+    }
 
 
 async def create_ticket(args: CreateTicketArgs, ctx: AgentContext) -> dict:

@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 import pytest
 
@@ -53,6 +54,18 @@ async def test_lookup_order_returns_warranty_end_date(ctx):
     item = res["orders"][0]["items"][0]
     assert res["orders"][0]["delivered_on"] == "2026-07-21"
     assert item["warranty_until"] == "2028-07-21"
+    assert item["warranty_status"] == "ACTIVE, 639 days left"
+    assert res["order_count"] == 1
+
+
+async def test_expired_and_undelivered_warranty_status(ctx):
+    expired = order("TZ10005", delivered=datetime(2024, 8, 15, 3, 0, tzinfo=UTC))  # 24 months -> 2026-08-15
+    shipping = order("TZ10006", status="shipping", delivered=None)
+    c = ctx(phone=PHONE, repo=FakeRepo(orders_by_phone={PHONE: [expired, shipping]}))
+    res = await call("lookup_order", {}, c)
+    statuses = [o["items"][0]["warranty_status"] for o in res["orders"]]
+    assert statuses == ["EXPIRED 67 days ago", "not started (order not delivered yet)"]
+    assert res["order_count"] == 2
 
 
 async def test_lookup_other_customers_order_reveals_nothing(ctx):
